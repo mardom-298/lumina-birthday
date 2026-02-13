@@ -247,8 +247,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 const phone = phoneInput.value.trim().replace(/\D/g, '');
                 if (!name || !/^9\d{8}$/.test(phone)) return;
                 if (guestList.some(g => g.phone === phone)) { alert('Este número ya está registrado'); return; }
-                const newGuest: GuestEntry = { id: `guest_${Date.now()}`, name, phone, used: false };
-                onUpdateGuests([...guestList, newGuest]);
+                // Use crypto.randomUUID() or fallback for older browsers to satisfy Postgres UUID requirement
+                const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                  var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                  return v.toString(16);
+                });
+
+                const newGuest: GuestEntry = {
+                  id: newId,
+                  name: name,
+                  phone: phone,
+                  used: false,
+                }; onUpdateGuests([...guestList, newGuest]);
                 nameInput.value = '';
                 phoneInput.value = '';
               }} className="flex gap-3 flex-wrap">
