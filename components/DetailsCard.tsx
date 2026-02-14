@@ -123,6 +123,28 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
       const params = isInteractive ? `?autoplay=1&mute=0&controls=1` : `?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0`;
       return { type: 'youtube', embed: `https://www.youtube.com/embed/${id}${params}` };
     }
+    if (url.includes('vimeo.com')) {
+      // Extract Vimeo video ID from URLs like:
+      // https://vimeo.com/123456789
+      // https://vimeo.com/123456789/abcdef (private link with hash)
+      // https://player.vimeo.com/video/123456789
+      let vimeoId = '';
+      let hash = '';
+      if (url.includes('player.vimeo.com/video/')) {
+        // Already an embed URL, use as-is
+        return { type: 'vimeo', embed: url };
+      }
+      const parts = url.split('vimeo.com/')[1]?.split(/[?#]/)[0]?.split('/');
+      if (parts && parts[0]) {
+        vimeoId = parts[0];
+        if (parts[1]) hash = parts[1]; // private link hash
+      }
+      if (vimeoId) {
+        const hashParam = hash ? `?h=${hash}` : '';
+        const autoplay = isInteractive ? `${hashParam ? '&' : '?'}autoplay=1` : '';
+        return { type: 'vimeo', embed: `https://player.vimeo.com/video/${vimeoId}${hashParam}${autoplay}` };
+      }
+    }
     return { type: 'iframe', embed: url };
   };
 
@@ -186,8 +208,8 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
                           key={v.id}
                           onClick={() => setPreviewVenue(v)}
                           className={`shrink-0 px-4 py-2.5 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all duration-300 ${targetVenueForMap.id === v.id
-                              ? `bg-gradient-to-r ${v.color} border-transparent text-white shadow-lg scale-105`
-                              : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'
+                            ? `bg-gradient-to-r ${v.color} border-transparent text-white shadow-lg scale-105`
+                            : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'
                             }`}
                         >
                           {v.name}
@@ -234,10 +256,10 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
                         key={venue.id}
                         onClick={() => !winningVenue && setPreviewVenue(venue)}
                         className={`p-6 rounded-[2.2rem] border transition-all ${isWinner
-                            ? 'border-amber-500 bg-amber-500/10 scale-105'
-                            : (canInteract
-                              ? `bg-white/5 ${previewVenue?.id === venue.id ? 'border-white/40' : 'border-white/5'} hover:border-white/20 cursor-pointer`
-                              : 'opacity-40 grayscale pointer-events-none')
+                          ? 'border-amber-500 bg-amber-500/10 scale-105'
+                          : (canInteract
+                            ? `bg-white/5 ${previewVenue?.id === venue.id ? 'border-white/40' : 'border-white/5'} hover:border-white/20 cursor-pointer`
+                            : 'opacity-40 grayscale pointer-events-none')
                           }`}
                       >
                         <div className="flex justify-between items-center">
