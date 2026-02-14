@@ -144,7 +144,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
           <NavItem icon={BarChart3} label="Panel Principal" tab="panel" />
           <NavItem icon={ScanLine} label="Escanear QR" tab="scan" />
           <NavItem icon={Users} label="Invitados" tab="invitados" />
-          <NavItem icon={Star} label="Editar Sedes" tab="sedes" />
+          <NavItem icon={Star} label="Editar Ambientes" tab="sedes" />
           <NavItem icon={Settings} label="Ajustes" tab="ajustes" />
         </nav>
         <button onClick={onExit} className="w-full p-4 rounded-xl border border-white/10 text-gray-400 hover:text-white flex items-center justify-center gap-2 font-black text-[10px] uppercase transition-colors hover:bg-red-500/10 hover:text-red-500">
@@ -162,7 +162,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
               <div className="glass-card p-6 rounded-[2rem] text-center border-white/5 border-amber-500/20">
                 {tempConfig.winningVenueId ? <Trophy className="w-5 h-5 text-amber-500 mb-2 mx-auto" /> : <Clock className="w-5 h-5 text-gray-500 mb-2 mx-auto" />}
                 <p className="text-xs font-bold truncate px-2">{tempConfig.winningVenueId ? venues.find(v => v.id === tempConfig.winningVenueId)?.name : 'Votación Abierta'}</p>
-                <p className="text-[8px] uppercase tracking-widest text-gray-500">Estado de Sede</p>
+                <p className="text-[8px] uppercase tracking-widest text-gray-500">Estado del Ambiente</p>
               </div>
             </div>
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
@@ -209,7 +209,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">URL Video (YouTube/Vimeo/MP4)</label>
+                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Enlace de Video (YouTube/Vimeo/MP4)</label>
                       <input type="text" value={v.videoUrl} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, videoUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-amber-500" />
                     </div>
                     <div>
@@ -411,7 +411,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 </p>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] uppercase tracking-widest text-amber-500/60 font-black ml-2">ESTABLECER SEDE GANADORA (FORZAR)</label>
+                  <label className="text-[9px] uppercase tracking-widest text-amber-500/60 font-black ml-2">ESTABLECER AMBIENTE GANADOR (FORZAR)</label>
                   <div className="relative">
                     <select
                       value={tempConfig.winningVenueId || ''}
@@ -432,7 +432,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 {tempConfig.winningVenueId && (
                   <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl animate-fade-in">
                     <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-                    <p className="text-[9px] font-black uppercase text-amber-500 tracking-widest">Sede ganadora forzada manualmente: {venues.find(v => v.id === tempConfig.winningVenueId)?.name}</p>
+                    <p className="text-[9px] font-black uppercase text-amber-500 tracking-widest">Ambiente ganador forzado manualmente: {venues.find(v => v.id === tempConfig.winningVenueId)?.name}</p>
                   </div>
                 )}
               </div>
@@ -470,7 +470,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                   <h4 className="text-[10px] uppercase tracking-widest text-gray-500 font-black flex items-center gap-2"><Shield className="w-4 h-4" /> Seguridad</h4>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[9px] uppercase tracking-widest text-white/60 font-black ml-2">CÓDIGO GUEST</label>
+                      <label className="text-[9px] uppercase tracking-widest text-white/60 font-black ml-2">CÓDIGO INVITADO</label>
                       <input type="text" value={tempConfig.guestPasscode || ''} onChange={(e) => setTempConfig({ ...tempConfig, guestPasscode: e.target.value })} className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500" placeholder="2026" />
                     </div>
                     <div className="space-y-2">

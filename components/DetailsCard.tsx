@@ -7,6 +7,7 @@ interface DetailsCardProps {
   onContinue: () => void;
   config: EventConfig;
   venues: VenueOption[];
+  hasAlreadyVoted?: boolean;
 }
 
 const PLAYLIST_TRACKS = [
@@ -80,7 +81,7 @@ const CountdownTimer = ({ deadline }: { deadline: string }) => {
   );
 };
 
-export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, venues }) => {
+export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, venues, hasAlreadyVoted = false }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'vibes' | 'music'>('info');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(PLAYLIST_TRACKS[0].id);
   const isVotingClosed = config.votingDeadline ? new Date(config.votingDeadline).getTime() < Date.now() : false;
@@ -95,11 +96,14 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
   useEffect(() => {
     const handleSwitchToMap = () => setActiveTab('vibes');
     const handleSwitchToMusic = () => setActiveTab('music');
+    const handleNowPlaying = (e: any) => setCurrentPlayingId(e.detail.trackId);
     window.addEventListener('switch-to-map', handleSwitchToMap);
     window.addEventListener('switch-to-music', handleSwitchToMusic);
+    window.addEventListener('bg-music-now-playing', handleNowPlaying);
     return () => {
       window.removeEventListener('switch-to-map', handleSwitchToMap);
       window.removeEventListener('switch-to-music', handleSwitchToMusic);
+      window.removeEventListener('bg-music-now-playing', handleNowPlaying);
     };
   }, []);
 
@@ -111,6 +115,32 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
   useEffect(() => {
     if (activeVideo) window.dispatchEvent(new CustomEvent('bg-music-pause'));
     else setTimeout(() => window.dispatchEvent(new CustomEvent('bg-music-play')), 100);
+  }, [activeVideo]);
+
+  // Vimeo postMessage: auto-close modal when video ends
+  useEffect(() => {
+    if (!activeVideo) return;
+    const handleMessage = (event: MessageEvent) => {
+      // Vimeo sends JSON messages from player.vimeo.com
+      if (typeof event.data !== 'string') return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'ended' || data.event === 'finish') {
+          setActiveVideo(null);
+        }
+      } catch { /* not JSON, ignore */ }
+    };
+    window.addEventListener('message', handleMessage);
+    // Tell Vimeo iframe to send events
+    const iframe = document.getElementById('video-player-iframe') as HTMLIFrameElement;
+    if (iframe?.contentWindow) {
+      // Vimeo requires adding the origin for postMessage API
+      setTimeout(() => {
+        iframe.contentWindow?.postMessage('{"method":"addEventListener","value":"ended"}', '*');
+        iframe.contentWindow?.postMessage('{"method":"addEventListener","value":"finish"}', '*');
+      }, 1000);
+    }
+    return () => window.removeEventListener('message', handleMessage);
   }, [activeVideo]);
 
   const parseVideoInfo = (url: string, isInteractive: boolean = false) => {
@@ -141,8 +171,10 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
       }
       if (vimeoId) {
         const hashParam = hash ? `?h=${hash}` : '';
-        const autoplay = isInteractive ? `${hashParam ? '&' : '?'}autoplay=1` : '';
-        return { type: 'vimeo', embed: `https://player.vimeo.com/video/${vimeoId}${hashParam}${autoplay}` };
+        const sep = hashParam ? '&' : '?';
+        const extraParams = `${sep}title=0&byline=0&portrait=0&dnt=1`;
+        const autoplay = isInteractive ? `&autoplay=1&api=1` : '&api=1';
+        return { type: 'vimeo', embed: `https://player.vimeo.com/video/${vimeoId}${hashParam}${extraParams}${autoplay}` };
       }
     }
     return { type: 'iframe', embed: url };
@@ -155,7 +187,13 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in">
           <button onClick={() => setActiveVideo(null)} className="absolute top-8 right-8 p-3 bg-black/40 backdrop-blur-md rounded-full text-white z-[120] border border-white/10 active:scale-90 transition-transform"><X className="w-6 h-6" /></button>
           <div className="relative w-full h-full sm:h-[92vh] sm:max-w-4xl sm:rounded-[3.5rem] overflow-hidden bg-zinc-900 shadow-2xl">
-            <iframe src={parseVideoInfo(activeVideo, true).embed!} className="w-full h-full border-0" allowFullScreen allow="autoplay" />
+            <iframe
+              id="video-player-iframe"
+              src={parseVideoInfo(activeVideo, true).embed!}
+              className="w-full h-full border-0"
+              allowFullScreen
+              allow="autoplay"
+            />
           </div>
         </div>
       )}
@@ -165,16 +203,16 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
           <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent md:bg-gradient-to-r md:from-transparent md:to-zinc-900/80"></div>
           <div className="z-10 text-center px-6 md:text-left md:p-10 md:flex md:flex-col md:justify-end md:h-full md:items-start md:w-full">
-            <div className="inline-block px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black tracking-[0.3em] text-amber-500 mb-3 uppercase">{winningVenue ? 'Lugar Confirmado' : 'Evento Exclusivo'}</div>
-            <h2 className="text-4xl sm:text-5xl font-serif italic text-white drop-shadow-2xl">Mi Cumple</h2>
+            <div className="inline-block px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black tracking-[0.3em] text-amber-500 mb-3 uppercase">{winningVenue ? 'Ambiente Confirmado' : 'Evento Exclusivo'}</div>
+            <h2 className="text-4xl sm:text-5xl font-serif italic text-white drop-shadow-2xl">Marino <span className="text-amber-400">28</span></h2>
           </div>
         </div>
 
         <div className="p-8 sm:p-10 flex-1 flex flex-col space-y-8 relative">
           <div className="flex bg-white/5 p-1 rounded-[1.5rem] border border-white/5 shrink-0 z-20">
             <button onClick={() => setActiveTab('info')} className={`flex-1 py-4 text-[9px] font-black tracking-[0.15em] rounded-2xl transition-all duration-500 uppercase ${activeTab === 'info' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Detalles</button>
-            <button onClick={() => setActiveTab('vibes')} className={`flex-1 py-4 text-[9px] font-black tracking-[0.15em] rounded-2xl transition-all duration-500 uppercase ${activeTab === 'vibes' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Sedes</button>
-            <button onClick={() => setActiveTab('music')} className={`flex-1 py-4 text-[9px] font-black tracking-[0.15em] rounded-2xl transition-all duration-500 uppercase ${activeTab === 'music' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Vibe</button>
+            <button onClick={() => setActiveTab('vibes')} className={`flex-1 py-4 text-[9px] font-black tracking-[0.15em] rounded-2xl transition-all duration-500 uppercase ${activeTab === 'vibes' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Ambientes</button>
+            <button onClick={() => setActiveTab('music')} className={`flex-1 py-4 text-[9px] font-black tracking-[0.15em] rounded-2xl transition-all duration-500 uppercase ${activeTab === 'music' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Música</button>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pr-1 z-10">
@@ -197,7 +235,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
                   <div className="flex items-end justify-between px-2">
                     <p className="text-[9px] uppercase tracking-[0.3em] font-black text-gray-500 flex items-center gap-2">
                       {winningVenue ? <Trophy className="w-4 h-4 text-amber-500" /> : <Map className="w-4 h-4 text-emerald-500" />}
-                      {winningVenue ? 'Sede Confirmada' : 'Ubicación Interactiva'}
+                      {winningVenue ? 'Ambiente Confirmado' : 'Ubicación Interactiva'}
                     </p>
                   </div>
 
@@ -230,7 +268,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
 
                     <div className="absolute bottom-6 left-6 right-6 p-4 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between animate-fade-in-up">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Sede</span>
+                        <span className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Ambiente</span>
                         <span className="text-xs font-bold text-white">{targetVenueForMap.name}</span>
                       </div>
                       <a href={targetVenueForMap.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white hover:text-black transition-all">
@@ -244,7 +282,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
 
             {activeTab === 'vibes' && (
               <div className="space-y-6 animate-fade-in py-2">
-                <h3 className="text-lg font-serif italic px-2">{winningVenue ? 'Lugar Ganador' : 'Opciones Disponibles'}</h3>
+                <h3 className="text-lg font-serif italic px-2">{winningVenue ? 'Ambiente Ganador' : 'Opciones Disponibles'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {venues.map((venue) => {
                     const isWinner = winningVenue?.id === venue.id;
@@ -327,10 +365,21 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
             )}
           </div>
 
-          <button onClick={onContinue} className="group w-full py-5 font-black rounded-[2rem] flex items-center justify-center gap-4 bg-white text-black active:scale-95 transition-all shadow-2xl shrink-0 z-20">
-            {winningVenue || isVotingClosed ? <Sparkles className="w-5 h-5" /> : <Vote className="w-5 h-5" />}
-            <span className="text-[10px] tracking-[0.4em] uppercase">{winningVenue || isVotingClosed ? 'RECLAMAR TU PASE' : 'REGISTRARSE Y VOTAR'}</span>
-          </button>
+          {hasAlreadyVoted && !winningVenue && !isVotingClosed ? (
+            <div className="w-full p-6 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 text-center space-y-4 shrink-0 z-20">
+              <div className="flex items-center justify-center gap-2">
+                <Timer className="w-5 h-5 text-amber-500" />
+                <span className="text-[11px] font-black text-amber-500 uppercase tracking-[0.2em]">¡Ya registraste tu voto!</span>
+              </div>
+              <p className="text-[10px] text-gray-400 leading-relaxed">Espera a que terminen las votaciones para reclamar tus boletos.</p>
+              {config.votingDeadline && <CountdownTimer deadline={config.votingDeadline} />}
+            </div>
+          ) : (
+            <button onClick={onContinue} className="group w-full py-5 font-black rounded-[2rem] flex items-center justify-center gap-4 bg-white text-black active:scale-95 transition-all shadow-2xl shrink-0 z-20">
+              {winningVenue || isVotingClosed ? <Sparkles className="w-5 h-5" /> : <Vote className="w-5 h-5" />}
+              <span className="text-[10px] tracking-[0.4em] uppercase">{winningVenue || isVotingClosed ? 'RECLAMAR TU PASE' : 'REGISTRARSE Y VOTAR'}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

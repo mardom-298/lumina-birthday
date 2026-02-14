@@ -94,46 +94,79 @@ const mapRsvpFromDb = (dbRsvp: any, venues: VenueOption[]): RsvpData => {
   };
 };
 
+// Playlist track IDs must match DetailsCard PLAYLIST_TRACKS order
+const TRACK_IDS = [
+  '2097036720', '2161172100', '2113555638', '1927905131',
+  '1955520143', '797495047', '68957071', '2211822479'
+];
+
 const GlobalAudioPlayer = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<any>(null);
+  const currentIndexRef = useRef(0);
+
+  const loadTrack = (widget: any, index: number, autoPlay: boolean = true) => {
+    currentIndexRef.current = index;
+    const trackId = TRACK_IDS[index];
+    const url = `https://api.soundcloud.com/tracks/${trackId}`;
+    widget.load(url, {
+      auto_play: autoPlay,
+      hide_related: true,
+      show_comments: false,
+      show_user: false,
+      show_reposts: false,
+      show_teaser: false,
+      visual: false,
+      color: "#fbbf24",
+      callback: () => {
+        // Notify DetailsCard which track is playing
+        window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId } }));
+      }
+    });
+  };
 
   useEffect(() => {
     const initWidget = () => {
       if (!iframeRef.current) return;
       const SC = (window as any).SC;
       if (!SC || !SC.Widget) {
-        setTimeout(initWidget, 500); // Reintenta si el script no ha cargado
+        setTimeout(initWidget, 500);
         return;
       }
 
       const widget = SC.Widget(iframeRef.current);
       widgetRef.current = widget;
 
-      // Escuchar eventos globales de música
+      // When the widget is ready, bind the FINISH event for auto-advance
+      widget.bind(SC.Widget.Events.READY, () => {
+        widget.bind(SC.Widget.Events.FINISH, () => {
+          // Advance to next track, loop back to first if at end
+          const nextIndex = (currentIndexRef.current + 1) % TRACK_IDS.length;
+          loadTrack(widget, nextIndex, true);
+        });
+
+        // Auto-play the first track on page load
+        widget.play();
+        window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId: TRACK_IDS[0] } }));
+      });
+
+      // Listen for global music control events
       const handlePlay = () => widget.play();
       const handlePause = () => widget.pause();
       const handleToggle = () => widget.toggle();
       const handleChangeTrack = (e: any) => {
         const trackId = e.detail.trackId;
-        const url = `https://api.soundcloud.com/tracks/${trackId}`;
-
-        // Cargar nueva pista y reproducir automáticamente
-        widget.load(url, {
-          auto_play: true,
-          hide_related: true,
-          show_comments: false,
-          show_user: false,
-          show_reposts: false,
-          show_teaser: false,
-          visual: false,
-          color: "#fbbf24"
-        });
-
-        // Pequeño delay para asegurar que la carga inició antes de forzar play
-        widget.bind(SC.Widget.Events.READY, () => {
-          widget.play();
-        });
+        const idx = TRACK_IDS.indexOf(trackId);
+        if (idx !== -1) {
+          loadTrack(widget, idx, true);
+        } else {
+          // Unknown track, load directly
+          widget.load(`https://api.soundcloud.com/tracks/${trackId}`, {
+            auto_play: true, hide_related: true, show_comments: false,
+            show_user: false, show_reposts: false, show_teaser: false,
+            visual: false, color: "#fbbf24"
+          });
+        }
       };
 
       window.addEventListener('bg-music-play', handlePlay);
@@ -161,7 +194,7 @@ const GlobalAudioPlayer = () => {
         scrolling="no"
         frameBorder="no"
         allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2097036720&color=%23fbbf24&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
+        src={`https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${TRACK_IDS[0]}&color=%23fbbf24&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`}
       />
     </div>
   );
@@ -227,6 +260,24 @@ function App() {
     };
 
     fetchData();
+  }, []);
+
+  // ── Supabase Real-time Subscription ─────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('config-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'config' }, (payload: any) => {
+        const record = payload.new;
+        if (!record) return;
+        if (record.key === 'event_settings') {
+          setConfig((prev: EventConfig) => ({ ...prev, ...record.value }));
+        } else if (record.key === 'venues') {
+          setVenues(record.value);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // ── Actions ───────────────────────────────────────────────────────
@@ -295,7 +346,7 @@ function App() {
     };
   }, []);
 
-  const handleUnlock = (guest: GuestEntry) => {
+  const handleUnlock = async (guest: GuestEntry) => {
     // Mark guest as used
     const updatedList = guestList.map(g =>
       g.id === guest.id ? { ...g, used: true, usedAt: Date.now() } : g
@@ -306,7 +357,30 @@ function App() {
     window.dispatchEvent(new CustomEvent('bg-music-play'));
     setBgMusicPlaying(true);
 
-    if (currentRsvpData) {
+    // Check if this guest already voted (has RSVP in DB)
+    const { data: existingRsvp } = await supabase
+      .from('rsvps')
+      .select('*')
+      .or(`first_name.ilike.%${guest.name.split(' ')[0]}%`)
+      .limit(1);
+
+    if (existingRsvp && existingRsvp.length > 0) {
+      // Guest already has an RSVP
+      const rsvpData = mapRsvpFromDb(existingRsvp[0], venues);
+      setCurrentRsvpData(rsvpData);
+      localStorage.setItem('lumina_rsvp', JSON.stringify(rsvpData));
+
+      // If voting is still open and they already voted, go to INVITATION (shows countdown)
+      // If voting closed and they have tickets, go to SUCCESS
+      const votingStillOpen = config.votingDeadline && new Date(config.votingDeadline).getTime() > Date.now() && !config.winningVenueId;
+      if (votingStillOpen) {
+        setAppState(AppState.INVITATION);
+      } else if (rsvpData.ticketIds && rsvpData.ticketIds.length > 0) {
+        setAppState(AppState.SUCCESS);
+      } else {
+        setAppState(AppState.INVITATION);
+      }
+    } else if (currentRsvpData) {
       setAppState(AppState.SUCCESS);
     } else {
       setAppState(AppState.INVITATION);
@@ -364,7 +438,7 @@ function App() {
         )}
 
         {appState === AppState.INVITATION && (
-          <DetailsCard onContinue={startRsvp} config={config} venues={venues} />
+          <DetailsCard onContinue={startRsvp} config={config} venues={venues} hasAlreadyVoted={!!currentRsvpData} />
         )}
 
         {appState === AppState.RSVP && (
@@ -387,7 +461,7 @@ function App() {
       {appState !== AppState.ADMIN && (
         <div className="fixed bottom-4 right-6 sm:bottom-6 sm:right-8 z-50 pointer-events-none flex flex-col items-end opacity-20 transition-all">
           <p className="text-[9px] sm:text-[10px] font-mono tracking-[0.2em] text-white uppercase">{currentTime}</p>
-          <p className="text-[7px] sm:text-[8px] font-mono tracking-[0.4em] text-white uppercase mt-0.5">EST. 2026</p>
+          <p className="text-[7px] sm:text-[8px] font-mono tracking-[0.4em] text-white uppercase mt-0.5">MARINO · 28</p>
         </div>
       )}
     </main>

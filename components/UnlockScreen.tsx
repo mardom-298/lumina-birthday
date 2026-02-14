@@ -109,7 +109,7 @@ const HoldRing: React.FC<{ progress: number; isHolding: boolean; isActive: boole
         strokeDasharray={circumference}
         strokeDashoffset={circumference - (circumference * progress) / 100}
         strokeLinecap="round"
-        className="transition-all duration-75 ease-linear"
+        className=""
         style={{ opacity: progress > 0 ? 1 : 0, filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' }}
       />
       <defs>
@@ -286,7 +286,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
         <div className="flex items-center gap-2">
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-r from-transparent to-amber-500/70"></div>
           <Sparkles className="w-3 h-3 text-amber-400" />
-          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-amber-400">Invitación Exclusiva</span>
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-amber-400">Fiesta de Marino</span>
           <Sparkles className="w-3 h-3 text-amber-400" />
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-l from-transparent to-amber-500/70"></div>
         </div>
@@ -304,14 +304,14 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
           <div className="flex items-center justify-center gap-2 sm:gap-4">
             <div className="h-[1px] flex-1 max-w-[40px] sm:max-w-[60px] bg-gradient-to-r from-transparent to-white/30"></div>
             <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.3em] sm:tracking-[0.5em] text-gray-300 font-black whitespace-nowrap">
-              La noche te espera
+              Marino cumple 28
             </p>
             <div className="h-[1px] flex-1 max-w-[40px] sm:max-w-[60px] bg-gradient-to-l from-transparent to-white/30"></div>
           </div>
           {/* Event teaser tags */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap pt-1">
             <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-300 bg-white/[0.06] border border-white/[0.1] px-2.5 py-1 sm:px-4 sm:py-2 rounded-full backdrop-blur-sm">{config.time}</span>
-            <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-300 bg-white/[0.06] border border-white/[0.1] px-2.5 py-1 sm:px-4 sm:py-2 rounded-full backdrop-blur-sm">Birthday 2026</span>
+            <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-300 bg-white/[0.06] border border-white/[0.1] px-2.5 py-1 sm:px-4 sm:py-2 rounded-full backdrop-blur-sm">Cumpleaños 2026</span>
             <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-amber-400 bg-amber-500/[0.08] border border-amber-500/[0.15] px-2.5 py-1 sm:px-4 sm:py-2 rounded-full backdrop-blur-sm">★ VIP</span>
           </div>
         </div>
@@ -483,7 +483,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
         {/* Footer */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gray-400">est. 2026</span>
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gray-400">Marino · 28</span>
           <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
         </div>
       </div>
