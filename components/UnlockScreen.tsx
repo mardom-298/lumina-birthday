@@ -282,7 +282,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       )}
 
       {/* ── Top Section: Branding ───────────────────────────── */}
-      <div className="z-20 flex flex-col items-center pt-6 sm:pt-10 md:pt-16 px-4 w-full shrink-0">
+      <div className="z-20 flex flex-col items-center pt-4 sm:pt-8 md:pt-12 px-4 w-full shrink-0">
         <div className="flex items-center gap-2">
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-r from-transparent to-amber-500/70"></div>
           <Sparkles className="w-3 h-3 text-amber-400" />
@@ -293,7 +293,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       </div>
 
       {/* ── Center Section: Date + Phone ────────────────────── */}
-      <div className="z-20 flex-1 flex flex-col items-center justify-center w-full max-w-lg px-5 space-y-4 sm:space-y-6 md:space-y-8 min-h-0">
+      <div className="z-20 flex-1 flex flex-col items-center justify-center w-full max-w-lg px-5 space-y-2 sm:space-y-4 md:space-y-6 min-h-0">
 
         {/* Date Display */}
         <div className="space-y-1.5 sm:space-y-3 select-none shrink-0">
@@ -340,7 +340,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
                   <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-r from-amber-500/30 via-purple-500/20 to-amber-500/30 animate-gradient-x"></div>
                 </div>
 
-                <div className={`relative flex items-center backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] h-16 sm:h-20 transition-all duration-300 border
+                <div className={`relative flex items-center backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] h-14 sm:h-16 transition-all duration-300 border
                   ${verificationState === 'not_found' ? 'border-red-500/30 bg-red-500/[0.03]' : isPhoneValid ? 'border-amber-500/30 bg-white/[0.04]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
                   <div className="flex items-center justify-center pl-5 sm:pl-7 pr-1 sm:pr-2">
                     <Phone className={`w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-300 ${verificationState === 'not_found' ? 'text-red-500/60' : isPhoneValid ? 'text-amber-500' : 'text-gray-700'}`} />
@@ -432,7 +432,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       </div>
 
       {/* ── Bottom Section: Hold-to-Enter ───────────────────── */}
-      <div className="z-30 flex flex-col items-center w-full pb-5 sm:pb-10 md:pb-14 space-y-2 sm:space-y-4 px-4 shrink-0">
+      <div className="z-30 flex flex-col items-center w-full pb-20 sm:pb-24 md:pb-32 space-y-2 sm:space-y-4 px-4 shrink-0">
         <div
           className={`relative flex items-center justify-center touch-none select-none transition-all duration-700
             w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44
