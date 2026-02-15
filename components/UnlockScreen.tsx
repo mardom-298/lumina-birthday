@@ -409,23 +409,20 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
             </div>
 
           ) : verificationState === 'found' && matchedGuest ? (
-            /* Guest Found — Verified State */
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-emerald-500/15 p-8 sm:p-10 text-center space-y-5 backdrop-blur-xl"
+            /* Guest Found — Verified State (compact) */
+            <div className="relative overflow-hidden rounded-[2rem] border border-emerald-500/15 p-5 sm:p-6 text-center backdrop-blur-xl"
               style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(0,0,0,0.4) 100%)' }}>
               <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none"></div>
-              {/* Success glow */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-
-              <div className="relative z-10 space-y-4 sm:space-y-5">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
-                  <Check className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+                  <Check className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400/70 mb-2">¡Invitado Verificado!</p>
-                  <h3 className="text-2xl sm:text-3xl font-serif italic text-white">{matchedGuest.name}</h3>
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.4em] text-emerald-400/70 mb-1">¡Invitado Verificado!</p>
+                  <h3 className="text-xl sm:text-2xl font-serif italic text-white">{matchedGuest.name}</h3>
                 </div>
-                <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-[0.2em]">¿Eres tú? Mantén presionado el botón para entrar</p>
-                <button onClick={handleResetVerification} className="text-[9px] sm:text-[10px] text-gray-600 hover:text-gray-400 font-bold uppercase tracking-widest transition-colors underline underline-offset-4 decoration-gray-800 hover:decoration-gray-600">
+                <p className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.15em] leading-relaxed">¿Eres tú? Mantén presionado el botón para entrar</p>
+                <button onClick={handleResetVerification} className="text-[8px] sm:text-[9px] text-gray-600 hover:text-gray-400 font-bold uppercase tracking-widest transition-colors underline underline-offset-4 decoration-gray-800 hover:decoration-gray-600">
                   No soy yo
                 </button>
               </div>
