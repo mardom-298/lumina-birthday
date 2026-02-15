@@ -94,117 +94,113 @@ const mapRsvpFromDb = (dbRsvp: any, venues: VenueOption[]): RsvpData => {
   };
 };
 
-// Playlist track IDs must match DetailsCard PLAYLIST_TRACKS order
-const TRACK_IDS = [
-  '2097036720', '2161172100', '2113555638', '1927905131',
-  '1955520143', '797495047', '68957071', '2211822479'
+// Playlist track info — must match DetailsCard PLAYLIST_TRACKS order
+const TRACKS = [
+  { id: '2097036720', color: '0d0df0' },
+  { id: '2161172100', color: '607c7c' },
+  { id: '2113555638', color: 'ff5500' },
+  { id: '1927905131', color: 'd650ae' },
+  { id: '1955520143', color: '21101c' },
+  { id: '797495047', color: '60ace0' },
+  { id: '68957071', color: '60ace0' },
+  { id: '2211822479', color: '60ace0' },
 ];
 
+const buildSCUrl = (trackId: string, color: string) =>
+  `https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%3Atracks%3A${trackId}&color=%23${color}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`;
+
 const GlobalAudioPlayer = () => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const widgetRef = useRef<any>(null);
+  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
+  const widgetsRef = useRef<any[]>([]);
   const currentIndexRef = useRef(0);
+  const readyCountRef = useRef(0);
 
-  // Re-bind FINISH event after every load — widget.load() destroys bindings
-  const bindFinishAndAdvance = (widget: any) => {
-    const SC = (window as any).SC;
-    if (!SC?.Widget?.Events) return;
-    widget.bind(SC.Widget.Events.FINISH, () => {
-      const nextIndex = (currentIndexRef.current + 1) % TRACK_IDS.length;
-      loadTrack(widget, nextIndex, true);
-    });
-  };
-
-  const loadTrack = (widget: any, index: number, autoPlay: boolean = true) => {
-    currentIndexRef.current = index;
-    const trackId = TRACK_IDS[index];
-    const url = `https://api.soundcloud.com/tracks/${trackId}`;
-    widget.load(url, {
-      auto_play: autoPlay,
-      hide_related: true,
-      show_comments: false,
-      show_user: false,
-      show_reposts: false,
-      show_teaser: false,
-      visual: false,
-      color: "#fbbf24",
-      callback: () => {
-        // Re-bind FINISH for this new track (load() destroys old bindings)
-        bindFinishAndAdvance(widget);
-        // Notify DetailsCard which track is playing
-        window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId } }));
-      }
-    });
+  const playTrack = (index: number) => {
+    const widgets = widgetsRef.current;
+    // Pause all
+    widgets.forEach((w, i) => { if (w && i !== index) w.pause(); });
+    // Play the target
+    if (widgets[index]) {
+      currentIndexRef.current = index;
+      widgets[index].play();
+      window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId: TRACKS[index].id } }));
+    }
   };
 
   useEffect(() => {
-    const initWidget = () => {
-      if (!iframeRef.current) return;
+    const initWidgets = () => {
       const SC = (window as any).SC;
       if (!SC || !SC.Widget) {
-        setTimeout(initWidget, 500);
+        setTimeout(initWidgets, 500);
         return;
       }
 
-      const widget = SC.Widget(iframeRef.current);
-      widgetRef.current = widget;
+      TRACKS.forEach((track, i) => {
+        const iframe = iframeRefs.current[i];
+        if (!iframe) return;
 
-      // When the widget is ready for the FIRST track
-      widget.bind(SC.Widget.Events.READY, () => {
-        // Bind FINISH for the first track
-        bindFinishAndAdvance(widget);
+        const widget = SC.Widget(iframe);
+        widgetsRef.current[i] = widget;
 
-        // Auto-play the first track on page load
-        widget.play();
-        window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId: TRACK_IDS[0] } }));
-      });
-
-      // Listen for global music control events
-      const handlePlay = () => widget.play();
-      const handlePause = () => widget.pause();
-      const handleToggle = () => widget.toggle();
-      const handleChangeTrack = (e: any) => {
-        const trackId = e.detail.trackId;
-        const idx = TRACK_IDS.indexOf(trackId);
-        if (idx !== -1) {
-          loadTrack(widget, idx, true);
-        } else {
-          widget.load(`https://api.soundcloud.com/tracks/${trackId}`, {
-            auto_play: true, hide_related: true, show_comments: false,
-            show_user: false, show_reposts: false, show_teaser: false,
-            visual: false, color: "#fbbf24",
-            callback: () => { bindFinishAndAdvance(widget); }
+        widget.bind(SC.Widget.Events.READY, () => {
+          // Bind FINISH for auto-advance
+          widget.bind(SC.Widget.Events.FINISH, () => {
+            const nextIndex = (i + 1) % TRACKS.length;
+            playTrack(nextIndex);
           });
-        }
-      };
 
-      window.addEventListener('bg-music-play', handlePlay);
-      window.addEventListener('bg-music-pause', handlePause);
-      window.addEventListener('bg-music-toggle', handleToggle);
-      window.addEventListener('bg-music-change-track', handleChangeTrack);
-
-      return () => {
-        window.removeEventListener('bg-music-play', handlePlay);
-        window.removeEventListener('bg-music-pause', handlePause);
-        window.removeEventListener('bg-music-toggle', handleToggle);
-        window.removeEventListener('bg-music-change-track', handleChangeTrack);
-      };
+          readyCountRef.current++;
+          // When first widget is ready, auto-play it
+          if (i === 0) {
+            // Small delay to ensure browser allows autoplay
+            setTimeout(() => {
+              widget.play();
+              window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId: TRACKS[0].id } }));
+            }, 300);
+          }
+        });
+      });
     };
 
-    initWidget();
+    initWidgets();
+
+    // Listen for global music control events
+    const handlePlay = () => widgetsRef.current[currentIndexRef.current]?.play();
+    const handlePause = () => widgetsRef.current[currentIndexRef.current]?.pause();
+    const handleToggle = () => widgetsRef.current[currentIndexRef.current]?.toggle();
+    const handleChangeTrack = (e: any) => {
+      const trackId = e.detail.trackId;
+      const idx = TRACKS.findIndex(t => t.id === trackId);
+      if (idx !== -1) playTrack(idx);
+    };
+
+    window.addEventListener('bg-music-play', handlePlay);
+    window.addEventListener('bg-music-pause', handlePause);
+    window.addEventListener('bg-music-toggle', handleToggle);
+    window.addEventListener('bg-music-change-track', handleChangeTrack);
+
+    return () => {
+      window.removeEventListener('bg-music-play', handlePlay);
+      window.removeEventListener('bg-music-pause', handlePause);
+      window.removeEventListener('bg-music-toggle', handleToggle);
+      window.removeEventListener('bg-music-change-track', handleChangeTrack);
+    };
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 w-8 h-8 opacity-0 pointer-events-none overflow-hidden z-[-100]">
-      <iframe
-        ref={iframeRef}
-        width="100%"
-        height="100"
-        scrolling="no"
-        frameBorder="no"
-        allow="autoplay"
-        src={`https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${TRACK_IDS[0]}&color=%23fbbf24&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`}
-      />
+    <div className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none overflow-hidden" style={{ zIndex: -100 }}>
+      {TRACKS.map((track, i) => (
+        <iframe
+          key={track.id}
+          ref={el => { iframeRefs.current[i] = el; }}
+          width="100%"
+          height="100"
+          scrolling="no"
+          frameBorder="no"
+          allow="autoplay"
+          src={buildSCUrl(track.id, track.color)}
+        />
+      ))}
     </div>
   );
 };
