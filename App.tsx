@@ -105,6 +105,16 @@ const GlobalAudioPlayer = () => {
   const widgetRef = useRef<any>(null);
   const currentIndexRef = useRef(0);
 
+  // Re-bind FINISH event after every load — widget.load() destroys bindings
+  const bindFinishAndAdvance = (widget: any) => {
+    const SC = (window as any).SC;
+    if (!SC?.Widget?.Events) return;
+    widget.bind(SC.Widget.Events.FINISH, () => {
+      const nextIndex = (currentIndexRef.current + 1) % TRACK_IDS.length;
+      loadTrack(widget, nextIndex, true);
+    });
+  };
+
   const loadTrack = (widget: any, index: number, autoPlay: boolean = true) => {
     currentIndexRef.current = index;
     const trackId = TRACK_IDS[index];
@@ -119,6 +129,8 @@ const GlobalAudioPlayer = () => {
       visual: false,
       color: "#fbbf24",
       callback: () => {
+        // Re-bind FINISH for this new track (load() destroys old bindings)
+        bindFinishAndAdvance(widget);
         // Notify DetailsCard which track is playing
         window.dispatchEvent(new CustomEvent('bg-music-now-playing', { detail: { trackId } }));
       }
@@ -137,13 +149,10 @@ const GlobalAudioPlayer = () => {
       const widget = SC.Widget(iframeRef.current);
       widgetRef.current = widget;
 
-      // When the widget is ready, bind the FINISH event for auto-advance
+      // When the widget is ready for the FIRST track
       widget.bind(SC.Widget.Events.READY, () => {
-        widget.bind(SC.Widget.Events.FINISH, () => {
-          // Advance to next track, loop back to first if at end
-          const nextIndex = (currentIndexRef.current + 1) % TRACK_IDS.length;
-          loadTrack(widget, nextIndex, true);
-        });
+        // Bind FINISH for the first track
+        bindFinishAndAdvance(widget);
 
         // Auto-play the first track on page load
         widget.play();
@@ -160,11 +169,11 @@ const GlobalAudioPlayer = () => {
         if (idx !== -1) {
           loadTrack(widget, idx, true);
         } else {
-          // Unknown track, load directly
           widget.load(`https://api.soundcloud.com/tracks/${trackId}`, {
             auto_play: true, hide_related: true, show_comments: false,
             show_user: false, show_reposts: false, show_teaser: false,
-            visual: false, color: "#fbbf24"
+            visual: false, color: "#fbbf24",
+            callback: () => { bindFinishAndAdvance(widget); }
           });
         }
       };
