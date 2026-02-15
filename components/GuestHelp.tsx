@@ -84,7 +84,7 @@ export const GuestHelp: React.FC<GuestHelpProps> = ({ appState, className, isVot
       {/* Botón de Ayuda */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`absolute z-[60] group flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${className || 'top-4 right-4'}`}
+        className={`fixed z-[60] group flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${className || 'top-4 right-4'}`}
       >
         <div className="relative w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 group-hover:text-white group-hover:border-white/30 transition-all">
           <div className="absolute inset-0 bg-white/5 animate-pulse group-hover:hidden rounded-full"></div>
