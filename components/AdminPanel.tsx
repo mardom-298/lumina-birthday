@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { VenueOption, EventConfig, RsvpData, GuestEntry } from '../types';
 import {
   BarChart3, Settings, Users, Star, ScanLine, LogOut, CheckCircle2,
-  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle
+  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette
 } from 'lucide-react';
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -189,37 +189,121 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
         {activeTab === 'sedes' && (
           <div className="space-y-8 animate-fade-in">
-            <h2 className="text-2xl font-serif italic">Gestionar Ambientes</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-serif italic">Gestionar Ambientes</h2>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black mt-1">{tempVenues.length} ambientes configurados</p>
+              </div>
+              <button
+                onClick={() => {
+                  const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'venue-' + Date.now();
+                  const colors = ['from-indigo-500 to-blue-500', 'from-fuchsia-600 to-purple-600', 'from-orange-500 to-amber-500', 'from-emerald-500 to-teal-500', 'from-rose-500 to-pink-500', 'from-cyan-500 to-sky-500'];
+                  const newVenue: VenueOption = {
+                    id: newId,
+                    name: 'Nuevo Ambiente',
+                    vibe: 'Describe el vibe',
+                    minSpend: 'S/ 0',
+                    closingTime: '03:00 AM',
+                    description: 'Descripción del ambiente',
+                    perks: ['Característica 1'],
+                    color: colors[tempVenues.length % colors.length],
+                    videoUrl: '',
+                    googleMapsUrl: ''
+                  };
+                  setTempVenues(prev => [...prev, newVenue]);
+                }}
+                className="px-6 py-3 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all hover:bg-amber-400"
+              >
+                <Plus className="w-4 h-4" /> Agregar Ambiente
+              </button>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {tempVenues.map(v => (
-                <div key={v.id} className="glass-card p-8 rounded-[2.5rem] border-white/5 space-y-6">
+                <div key={v.id} className="glass-card p-8 rounded-[2.5rem] border-white/5 space-y-6 relative group">
+                  {/* Delete button */}
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar el ambiente "${v.name}"? Esta acción no se puede deshacer.`)) {
+                        setTempVenues(prev => prev.filter(item => item.id !== v.id));
+                      }
+                    }}
+                    className="absolute top-6 right-6 p-2 rounded-xl bg-red-500/0 hover:bg-red-500/10 text-gray-600 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                    title="Eliminar ambiente"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${v.color} flex items-center justify-center`}><Type className="w-5 h-5 text-white" /></div>
-                    <input type="text" value={v.name} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, name: e.target.value } : item))} className="bg-transparent border-b border-white/10 outline-none w-full font-serif italic text-lg" />
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${v.color} flex items-center justify-center shrink-0`}><Type className="w-5 h-5 text-white" /></div>
+                    <input type="text" value={v.name} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, name: e.target.value } : item))} className="bg-transparent border-b border-white/10 outline-none w-full font-serif italic text-lg" placeholder="Nombre del ambiente" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  {/* Description */}
+                  <div>
+                    <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Descripción</label>
+                    <textarea value={v.description} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, description: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs resize-none h-20" placeholder="Describe este ambiente..." />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Ambiente / Vibe</label>
                       <input type="text" value={v.vibe} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, vibe: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Consumo Mín.</label>
+                      <input type="text" value={v.minSpend} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, minSpend: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs" placeholder="S/ 80" />
                     </div>
                     <div>
                       <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Cierre</label>
                       <input type="text" value={v.closingTime} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, closingTime: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs" />
                     </div>
                   </div>
+
+                  {/* Color picker */}
+                  <div>
+                    <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Color del Ambiente</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { value: 'from-indigo-500 to-blue-500', label: 'Azul' },
+                        { value: 'from-fuchsia-600 to-purple-600', label: 'Púrpura' },
+                        { value: 'from-orange-500 to-amber-500', label: 'Ámbar' },
+                        { value: 'from-emerald-500 to-teal-500', label: 'Esmeralda' },
+                        { value: 'from-rose-500 to-pink-500', label: 'Rosa' },
+                        { value: 'from-cyan-500 to-sky-500', label: 'Celeste' },
+                        { value: 'from-red-500 to-orange-500', label: 'Rojo' },
+                        { value: 'from-violet-500 to-indigo-500', label: 'Violeta' },
+                      ].map(c => (
+                        <button
+                          key={c.value}
+                          onClick={() => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, color: c.value } : item))}
+                          className={`w-8 h-8 rounded-xl bg-gradient-to-br ${c.value} transition-all ${v.color === c.value ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-110' : 'opacity-50 hover:opacity-100'}`}
+                          title={c.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div>
                       <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Enlace de Video (YouTube/Vimeo/MP4)</label>
-                      <input type="text" value={v.videoUrl} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, videoUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-amber-500" />
+                      <input type="text" value={v.videoUrl || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, videoUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-amber-500" placeholder="https://..." />
                     </div>
                     <div>
                       <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Enlace Google Maps</label>
-                      <input type="text" value={v.googleMapsUrl} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, googleMapsUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-emerald-500" />
+                      <input type="text" value={v.googleMapsUrl || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, googleMapsUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-emerald-500" placeholder="https://maps.app.goo.gl/..." />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {tempVenues.length === 0 && (
+              <div className="text-center py-16 text-gray-600">
+                <Palette className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                <p className="text-sm italic">No hay ambientes configurados. Agrega uno para empezar.</p>
+              </div>
+            )}
+
             <button onClick={saveAll} className="w-full py-6 rounded-3xl bg-white text-black font-black uppercase text-[10px] tracking-widest">
               {saveStatus === 'exito' ? '¡CAMBIOS GUARDADOS!' : 'GUARDAR TODA LA CONFIGURACIÓN'}
             </button>
