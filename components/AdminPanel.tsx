@@ -28,140 +28,126 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const qrScannerRef = React.useRef<Html5Qrcode | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+  const scanIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { setTempConfig(config); setTempVenues(venues); }, [config, venues]);
 
   // Cleanup camera when leaving scan tab
   useEffect(() => {
-    if (activeTab !== 'scan' && qrScannerRef.current) {
-      qrScannerRef.current.stop().catch(() => { });
-      qrScannerRef.current = null;
-      setCameraActive(false);
+    if (activeTab !== 'scan') {
+      stopCameraStream();
     }
   }, [activeTab]);
 
   const handleQrResult = (decodedText: string) => {
     // Stop camera after successful scan
-    if (qrScannerRef.current) {
-      qrScannerRef.current.stop().catch(() => { });
-      setCameraActive(false);
-    }
+    stopCameraStream();
     const found = rsvps.find(r => r.ticketIds?.includes(decodedText));
     if (found) setScanResult({ valid: true, data: found, message: "Pase Válido" });
     else setScanResult({ valid: false, message: "Pase No Encontrado" });
   };
 
-  // Robust cleanup to prevent "scanner already started" errors
-  const cleanupScanner = async () => {
-    if (qrScannerRef.current) {
-      try {
-        const state = qrScannerRef.current.getState();
-        if (state === 2) { // SCANNING
-          await qrScannerRef.current.stop();
-        }
-        qrScannerRef.current.clear();
-      } catch (e) {
-        console.warn("Error stopping scanner", e);
-      }
-      qrScannerRef.current = null;
+  const stopCameraStream = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setCameraActive(false);
   };
 
   const startCamera = async () => {
-    await cleanupScanner();
+    stopCameraStream();
     setCameraError(null);
     setScanResult(null);
 
-    // First, explicitly request camera permission
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // Stop the test stream immediately — we just needed the permission grant
-      stream.getTracks().forEach(t => t.stop());
-    } catch (permErr: any) {
-      setCameraError('Permiso de cámara denegado. Habilita la cámara en los ajustes de tu navegador y recarga la página.');
-      return;
-    }
-
-    // Wait for DOM to be ready
-    await new Promise(r => setTimeout(r, 500));
-
-    const element = document.getElementById("qr-reader");
-    if (!element) {
-      setCameraError("Error interno: Elemento de cámara no encontrado en el DOM.");
-      return;
-    }
-
-    try {
-      const scanner = new Html5Qrcode("qr-reader", { verbose: false });
-      qrScannerRef.current = scanner;
-
-      const scanConfig = {
-        fps: 10,
-        qrbox: { width: 200, height: 200 },
-        aspectRatio: 1.0,
-        disableFlip: false
-      };
-
-      // Try rear camera first, then front camera as fallback
-      let started = false;
+      // Request camera - try rear first, fallback to any
+      let stream: MediaStream;
       try {
-        await scanner.start(
-          { facingMode: "environment" },
-          scanConfig,
-          (decodedText) => handleQrResult(decodedText),
-          () => { }
-        );
-        started = true;
-      } catch (rearErr) {
-        console.warn('Rear camera failed, trying front:', rearErr);
-        try {
-          await scanner.start(
-            { facingMode: "user" },
-            scanConfig,
-            (decodedText) => handleQrResult(decodedText),
-            () => { }
-          );
-          started = true;
-        } catch (frontErr) {
-          console.error('Front camera also failed:', frontErr);
-        }
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 640 } }
+        });
+      } catch {
+        // Fallback: try any available camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
 
-      if (started) {
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.muted = true;
+        await videoRef.current.play();
         setCameraActive(true);
-        // Force video element to be visible (html5-qrcode sometimes hides it)
-        setTimeout(() => {
-          const video = element.querySelector('video');
-          if (video) {
-            video.style.width = '100%';
-            video.style.height = '100%';
-            video.style.objectFit = 'cover';
-            video.style.display = 'block';
-            video.style.position = 'absolute';
-            video.style.top = '0';
-            video.style.left = '0';
-          }
-          // Also ensure the container created by html5-qrcode fills parent
-          const innerDiv = element.querySelector('#qr-shaded-region');
-          if (innerDiv) {
-            (innerDiv as HTMLElement).style.position = 'absolute';
-            (innerDiv as HTMLElement).style.inset = '0';
-          }
-        }, 300);
-      } else {
-        setCameraError('No se pudo acceder a ninguna cámara. Intenta usar "Subir Imagen" o verifica que no haya otra app usando la cámara.');
-        setCameraActive(false);
+
+        // Start QR code scanning from video frames
+        startFrameScanning();
       }
     } catch (err: any) {
-      console.error("Camera start error:", err);
-      setCameraError(`Error: ${err?.message || 'No se pudo iniciar la cámara'}. Asegúrate de acceder por HTTPS.`);
-      setCameraActive(false);
+      console.error('Camera error:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Permiso de cámara denegado. Habilita la cámara en ajustes del navegador y recarga.');
+      } else if (err.name === 'NotFoundError') {
+        setCameraError('No se encontró cámara en este dispositivo.');
+      } else {
+        setCameraError(`Error de cámara: ${err.message || 'Desconocido'}. Asegúrate de acceder por HTTPS.`);
+      }
     }
   };
 
-  const stopCamera = cleanupScanner;
+  const startFrameScanning = () => {
+    // Use BarcodeDetector API if available (Chrome 83+, Safari 17.2+)
+    const hasBarcodeDetector = 'BarcodeDetector' in window;
+
+    if (hasBarcodeDetector) {
+      const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+      scanIntervalRef.current = setInterval(async () => {
+        if (videoRef.current && videoRef.current.readyState >= 2) {
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0) {
+              handleQrResult(barcodes[0].rawValue);
+            }
+          } catch (e) { /* frame scan error, ignore */ }
+        }
+      }, 500);
+    } else {
+      // Fallback: capture frames to canvas and use html5-qrcode to decode
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      scanIntervalRef.current = setInterval(async () => {
+        if (videoRef.current && ctx && videoRef.current.readyState >= 2) {
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          ctx.drawImage(videoRef.current, 0, 0);
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            try {
+              const file = new File([blob], 'frame.png', { type: 'image/png' });
+              const scanner = new Html5Qrcode('qr-canvas-tmp', { verbose: false });
+              const result = await scanner.scanFileV2(file, false);
+              if (result?.decodedText) {
+                handleQrResult(result.decodedText);
+              }
+              scanner.clear();
+            } catch { /* no QR found in frame, ignore */ }
+          }, 'image/png');
+        }
+      }, 800);
+    }
+  };
+
+  const stopCamera = stopCameraStream;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -512,8 +498,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
             {!scanResult ? (
               <>
-                {/* Camera viewport */}
-                <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} className="max-w-sm bg-black border border-white/10 rounded-[2rem] overflow-hidden relative">
+                {/* Camera viewport — native video element */}
+                <div className="w-full max-w-sm bg-black border border-white/10 rounded-[2rem] overflow-hidden relative" style={{ minHeight: '320px' }}>
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    autoPlay
+                    className="w-full h-full object-cover"
+                    style={{ minHeight: '320px', display: cameraActive ? 'block' : 'none' }}
+                  />
+                  {cameraActive && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* Scanning crosshair overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-48 h-48 border-2 border-amber-400/50 rounded-2xl relative">
+                          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-amber-400 rounded-tl-lg" />
+                          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-amber-400 rounded-tr-lg" />
+                          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-amber-400 rounded-bl-lg" />
+                          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-amber-400 rounded-br-lg" />
+                          {/* Scanning line animation */}
+                          <div className="absolute left-1 right-1 h-0.5 bg-amber-400/60 animate-pulse" style={{ top: '50%' }} />
+                        </div>
+                      </div>
+                      <p className="absolute bottom-4 left-0 right-0 text-center text-[9px] text-amber-400/80 font-black uppercase tracking-widest">Escaneando...</p>
+                    </div>
+                  )}
                   {!cameraActive && !cameraError && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-gray-500">
                       <ScanLine className="w-12 h-12 opacity-30" />
@@ -521,8 +531,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     </div>
                   )}
                 </div>
-                {/* Hidden element for file scanning */}
-                <div id="qr-reader-file" className="hidden"></div>
+                {/* Hidden elements for file scanning fallback */}
+                <div id="qr-reader-file" className="hidden" />
+                <div id="qr-canvas-tmp" className="hidden" />
 
                 {cameraError && (
                   <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center max-w-sm w-full">
