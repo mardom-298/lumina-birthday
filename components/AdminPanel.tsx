@@ -207,8 +207,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     setSaveStatus('guardando');
 
     // Recalculate stocks based on maxCapacity
-    // Platinum fixed at 4. The rest is divided between Emerald and Standard.
-    const platinumStock = 4;
+    // Platinum fixed at 5. The rest is divided between Emerald and Standard.
+    const platinumStock = 5;
     const remainingCapacity = Math.max(0, tempConfig.maxCapacity - platinumStock);
     const emeraldStock = Math.floor(remainingCapacity / 2);
     const standardStock = remainingCapacity - emeraldStock; // Handles odd numbers
