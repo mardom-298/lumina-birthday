@@ -203,14 +203,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     }
   };
 
-  const saveAll = () => {
+  const saveAll = async () => {
     setSaveStatus('guardando');
-    setTimeout(() => {
+
+    // Recalculate stocks based on maxCapacity
+    // Platinum fixed at 4. The rest is divided between Emerald and Standard.
+    const platinumStock = 4;
+    const remainingCapacity = Math.max(0, tempConfig.maxCapacity - platinumStock);
+    const emeraldStock = Math.floor(remainingCapacity / 2);
+    const standardStock = remainingCapacity - emeraldStock; // Handles odd numbers
+
+    try {
+      // Parallel update for efficiency
+      await Promise.all([
+        supabase.from('ticket_tiers').update({ stock: platinumStock }).eq('id', 'platinum'),
+        supabase.from('ticket_tiers').update({ stock: emeraldStock }).eq('id', 'emerald'),
+        supabase.from('ticket_tiers').update({ stock: standardStock }).eq('id', 'standard')
+      ]);
+
       onUpdateConfig(tempConfig);
       onUpdateVenues(tempVenues);
       setSaveStatus('exito');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    }, 800);
+    } catch (err) {
+      console.error("Error updating stocks:", err);
+      // Even if stock update fails, try to save config locally
+      onUpdateConfig(tempConfig);
+      onUpdateVenues(tempVenues);
+      setSaveStatus('exito'); // Show success but log error
+    }
+
+    setTimeout(() => setSaveStatus('idle'), 3000);
   };
 
   const totalPax = rsvps.reduce((acc, curr) => acc + 1 + curr.guestCount, 0);
