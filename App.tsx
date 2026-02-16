@@ -329,6 +329,12 @@ function App() {
       try {
         const parsed = JSON.parse(saved);
         setCurrentRsvpData(parsed);
+        // Auto-unlock if session exists
+        if (parsed.ticketIds && parsed.ticketIds.length > 0) {
+          setAppState(AppState.SUCCESS);
+        } else {
+          setAppState(AppState.INVITATION);
+        }
       } catch (e) { }
     }
 

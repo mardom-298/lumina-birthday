@@ -193,10 +193,8 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       if (newAttempts >= RATE_LIMIT_MAX) setLockedUntil(Date.now() + RATE_LIMIT_COOLDOWN);
       setShakeInput(true);
       setTimeout(() => setShakeInput(false), 600);
-    } else if (found.used) {
-      setVerificationState('used');
-      setMatchedGuest(found);
     } else {
+      // Allow re-entry even if used
       setVerificationState('found');
       setMatchedGuest(found);
       setShowConfetti(true);
