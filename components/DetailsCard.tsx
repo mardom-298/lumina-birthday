@@ -294,7 +294,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
                         key={venue.id}
                         onClick={() => !winningVenue && setPreviewVenue(venue)}
                         className={`p-6 rounded-[2.2rem] border transition-all relative overflow-hidden group ${isWinner
-                          ? 'border-amber-500/60 border-[1.5px] bg-gradient-to-br from-amber-500/20 to-black shadow-[0_0_40px_rgba(245,158,11,0.15)] scale-105'
+                          ? 'border-amber-500 border-2 bg-gradient-to-br from-amber-500/20 to-black shadow-[0_0_40px_rgba(245,158,11,0.2)] scale-105'
                           : (canInteract
                             ? `bg-white/5 ${previewVenue?.id === venue.id ? 'border-white/40' : 'border-white/5'} hover:border-white/20 cursor-pointer`
                             : 'opacity-40 grayscale pointer-events-none')
