@@ -554,8 +554,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                   <h4 className="text-[10px] uppercase tracking-widest text-gray-500 font-black flex items-center gap-2"><Shield className="w-4 h-4" /> Seguridad</h4>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[9px] uppercase tracking-widest text-white/60 font-black ml-2">CÓDIGO INVITADO</label>
-                      <input type="text" value={tempConfig.guestPasscode || ''} onChange={(e) => setTempConfig({ ...tempConfig, guestPasscode: e.target.value })} className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500" placeholder="2026" />
+                      <label className="text-[9px] uppercase tracking-widest text-white/60 font-black ml-2">CONTRASEÑA ADMIN</label>
+                      <input type="text" value={tempConfig.adminPassword || ''} onChange={(e) => setTempConfig({ ...tempConfig, adminPassword: e.target.value })} className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 font-mono text-amber-500" placeholder="admin123" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[9px] uppercase tracking-widest text-white/60 font-black ml-2">AFORO MÁXIMO</label>
