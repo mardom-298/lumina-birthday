@@ -223,7 +223,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
   };
 
   return (
-    <div className="flex flex-col items-center justify-between h-[100dvh] w-full text-center relative overflow-hidden bg-black">
+    <div className="flex flex-col items-center justify-center h-[100dvh] w-full text-center relative overflow-hidden bg-black">
 
       {/* ── Layered Background ──────────────────────────────── */}
       <div className="absolute inset-0 z-0">
@@ -282,7 +282,8 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       )}
 
       {/* ── Top Section: Branding ───────────────────────────── */}
-      <div className="z-20 flex flex-col items-center pt-4 sm:pt-8 md:pt-12 px-4 w-full shrink-0">
+      {/* ── Top Section: Branding (Absolute) ────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex flex-col items-center pt-8 sm:pt-10 px-4 w-full pointer-events-none">
         <div className="flex items-center gap-2">
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-r from-transparent to-amber-500/70"></div>
           <Sparkles className="w-3 h-3 text-amber-400" />
@@ -293,7 +294,8 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       </div>
 
       {/* ── Center Section: Date + Phone ────────────────────── */}
-      <div className="z-20 flex-1 flex flex-col items-center justify-center w-full max-w-lg px-5 space-y-2 sm:space-y-4 md:space-y-6 min-h-0">
+      {/* ── Center Content Group: Date + Input + Button ────── */}
+      <div className="z-20 flex flex-col items-center justify-center w-full max-w-lg px-5 space-y-6 sm:space-y-8 min-h-0 py-10">
 
         {/* Date Display */}
         <div className="space-y-1.5 sm:space-y-3 select-none shrink-0">
@@ -429,60 +431,63 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
             </div>
           ) : null}
         </div>
-      </div>
 
-      {/* ── Bottom Section: Hold-to-Enter ───────────────────── */}
-      <div className="z-30 flex flex-col items-center w-full pb-20 sm:pb-24 md:pb-32 space-y-2 sm:space-y-4 px-4 shrink-0">
-        <div
-          className={`relative flex items-center justify-center touch-none select-none transition-all duration-700
+        {/* ── Bottom Section: Hold-to-Enter ───────────────────── */}
+        {/* ── Bottom Section: Hold-to-Enter (Inside Center Group) ── */}
+        <div className="z-30 flex flex-col items-center w-full space-y-4 px-4 shrink-0 pt-2">
+          <div
+            className={`relative flex items-center justify-center touch-none select-none transition-all duration-700
             w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44
             ${!isGuestVerified ? 'opacity-[0.06] grayscale pointer-events-none scale-90' : 'opacity-100 scale-100'}`}
-          onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} onMouseLeave={() => setIsHolding(false)}
-          onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)}
-        >
-          {/* Outer pulse rings */}
-          {isGuestVerified && (
-            <>
-              <div className="absolute inset-[-15%] border border-amber-500/[0.06] rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
-              <div className="absolute inset-[-8%] border border-amber-500/[0.08] rounded-full animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></div>
-            </>
-          )}
-
-          {/* Static outer ring */}
-          <div className={`absolute inset-0 border rounded-full transition-all duration-1000 ${isHolding ? 'border-amber-500/20 scale-110' : 'border-white/[0.04] scale-100'}`}></div>
-
-          {/* Progress Ring SVG */}
-          <HoldRing progress={progress} isHolding={isHolding} isActive={isGuestVerified} />
-
-          {/* Center button */}
-          <div className={`w-[65%] h-[65%] rounded-full flex flex-col items-center justify-center transition-all duration-500 relative overflow-hidden border
-            ${isHolding
-              ? 'bg-gradient-to-br from-amber-500 to-orange-600 scale-90 border-amber-500/50 shadow-[0_0_50px_rgba(251,191,36,0.4)]'
-              : isGuestVerified
-                ? 'bg-gradient-to-br from-white/[0.04] to-white/[0.01] border-white/[0.08] hover:border-amber-500/20 cursor-pointer'
-                : 'bg-zinc-950 border-white/[0.04]'}`}
+            onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} onMouseLeave={() => setIsHolding(false)}
+            onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)}
           >
-            <div className={`flex items-center justify-center mb-1 sm:mb-2 transition-all duration-300 ${isHolding ? 'scale-110' : ''}`}>
-              {isGuestVerified
-                ? <Key className={`w-4 h-4 sm:w-6 sm:h-6 transition-colors ${isHolding ? 'text-black' : 'text-amber-500'}`} />
-                : <Lock className="w-4 h-4 sm:w-6 sm:h-6 text-gray-800" />}
+            {/* Outer pulse rings */}
+            {isGuestVerified && (
+              <>
+                <div className="absolute inset-[-15%] border border-amber-500/[0.06] rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
+                <div className="absolute inset-[-8%] border border-amber-500/[0.08] rounded-full animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></div>
+              </>
+            )}
+
+            {/* Static outer ring */}
+            <div className={`absolute inset-0 border rounded-full transition-all duration-1000 ${isHolding ? 'border-amber-500/20 scale-110' : 'border-white/[0.04] scale-100'}`}></div>
+
+            {/* Progress Ring SVG */}
+            <HoldRing progress={progress} isHolding={isHolding} isActive={isGuestVerified} />
+
+            {/* Center button */}
+            <div className={`w-[65%] h-[65%] rounded-full flex flex-col items-center justify-center transition-all duration-500 relative overflow-hidden border
+            ${isHolding
+                ? 'bg-gradient-to-br from-amber-500 to-orange-600 scale-90 border-amber-500/50 shadow-[0_0_50px_rgba(251,191,36,0.4)]'
+                : isGuestVerified
+                  ? 'bg-gradient-to-br from-white/[0.04] to-white/[0.01] border-white/[0.08] hover:border-amber-500/20 cursor-pointer'
+                  : 'bg-zinc-950 border-white/[0.04]'}`}
+            >
+              <div className={`flex items-center justify-center mb-1 sm:mb-2 transition-all duration-300 ${isHolding ? 'scale-110' : ''}`}>
+                {isGuestVerified
+                  ? <Key className={`w-4 h-4 sm:w-6 sm:h-6 transition-colors ${isHolding ? 'text-black' : 'text-amber-500'}`} />
+                  : <Lock className="w-4 h-4 sm:w-6 sm:h-6 text-gray-800" />}
+              </div>
+              <span className={`font-black text-[8px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.4em] transition-colors ${isHolding ? 'text-black' : isGuestVerified ? 'text-amber-400' : 'text-gray-600'}`}>
+                {isHolding ? 'ABRIENDO' : isGuestVerified ? 'ENTRAR' : 'CERRADO'}
+              </span>
             </div>
-            <span className={`font-black text-[8px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.4em] transition-colors ${isHolding ? 'text-black' : isGuestVerified ? 'text-amber-400' : 'text-gray-600'}`}>
-              {isHolding ? 'ABRIENDO' : isGuestVerified ? 'ENTRAR' : 'CERRADO'}
-            </span>
           </div>
+
+          <p className={`text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.4em] uppercase font-black transition-all duration-500 ${isHolding ? 'text-amber-400' : isGuestVerified ? 'text-gray-300 animate-pulse' : 'text-gray-500'}`}>
+            {isHolding ? "Autenticando..." : isGuestVerified ? "Mantén Presionado" : "Verifica Tu Número"}
+          </p>
+
         </div>
 
-        <p className={`text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.4em] uppercase font-black transition-all duration-500 ${isHolding ? 'text-amber-400' : isGuestVerified ? 'text-gray-300 animate-pulse' : 'text-gray-500'}`}>
-          {isHolding ? "Autenticando..." : isGuestVerified ? "Mantén Presionado" : "Verifica Tu Número"}
-        </p>
+      </div> {/* End Center Content Group */}
 
-        {/* Footer */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gray-400">Marino · 28</span>
-          <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
-        </div>
+      {/* ── Footer: Marino · 28 (Absolute) ─────────────────── */}
+      <div className="absolute bottom-6 sm:bottom-8 left-0 right-0 z-20 flex items-center justify-center gap-2 sm:gap-3 pointer-events-none">
+        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
+        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gray-400">Marino · 28</span>
+        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" />
       </div>
 
       {/* ── CSS Animations (injected via style tag) ─────────── */}
@@ -515,6 +520,6 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
           animation: gradient-x 3s ease infinite; 
         }
       `}</style>
-    </div>
+    </div >
   );
 };
