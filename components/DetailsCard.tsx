@@ -100,7 +100,7 @@ const VenueDetailsModal = ({ venue, onClose }: { venue: VenueOption; onClose: ()
       <div className="p-8 overflow-y-auto space-y-8">
         <div>
           <h4 className="text-[9px] uppercase tracking-widest text-gray-500 font-black mb-3">Descripción</h4>
-          <p className="text-sm text-gray-300 leading-relaxed font-light">{venue.description}</p>
+          <p className="text-sm text-gray-300 leading-relaxed font-light whitespace-pre-wrap">{venue.description}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

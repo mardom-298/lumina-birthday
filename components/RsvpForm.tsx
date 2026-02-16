@@ -243,7 +243,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
                 >
                   <span className="font-bold text-xl text-white block">{venue.name}</span>
                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-2">{venue.vibe}</p>
-                  <p className="text-[8px] text-gray-600 mt-3">{venue.description}</p>
                   {formData.selectedVenue?.id === venue.id && (
                     <div className="absolute top-4 right-4 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center animate-scale-in">
                       <Check className="w-3.5 h-3.5 text-black" />
