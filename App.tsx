@@ -81,6 +81,7 @@ const mapRsvpFromDb = (dbRsvp: any, venues: VenueOption[]): RsvpData => {
   const tier = INITIAL_TIERS.find(t => t.id === dbRsvp.selected_tier_id);
 
   return {
+    id: dbRsvp.id,
     firstName: dbRsvp.first_name,
     lastName: dbRsvp.last_name,
     email: dbRsvp.email || '',
@@ -409,7 +410,8 @@ function App() {
     localStorage.setItem('lumina_rsvp', JSON.stringify(data));
 
     // Save to Supabase
-    await supabase.from('rsvps').insert({
+    // Save to Supabase (Upsert if ID exists or insert new)
+    const payload: any = {
       first_name: data.firstName,
       last_name: data.lastName,
       email: data.email,
@@ -417,8 +419,16 @@ function App() {
       selected_tier_id: data.selectedTier?.id || null,
       guest_count: data.guestCount,
       ticket_ids: data.ticketIds,
-      created_at: new Date().toISOString() // using ISO for timestamptz
-    });
+      created_at: data.id ? undefined : new Date().toISOString() // Only set created_at on insert
+    };
+
+    if (data.id) {
+      // Update existing
+      await supabase.from('rsvps').update(payload).eq('id', data.id);
+    } else {
+      // Insert new
+      await supabase.from('rsvps').insert({ ...payload, created_at: new Date().toISOString() });
+    }
 
     setAppState(AppState.SUCCESS);
   };
@@ -447,7 +457,15 @@ function App() {
         )}
 
         {appState === AppState.RSVP && (
-          <RsvpForm onSubmit={handleRsvpSubmit} onBack={handleBackToDetails} venueOptions={venues} config={config} existingRsvpsCount={allRsvps.length} isVotingClosed={isVotingClosed} />
+          <RsvpForm
+            onSubmit={handleRsvpSubmit}
+            onBack={handleBackToDetails}
+            venueOptions={venues}
+            config={config}
+            existingRsvpsCount={allRsvps.length}
+            isVotingClosed={isVotingClosed}
+            initialData={currentRsvpData || undefined}
+          />
         )}
 
         {appState === AppState.SUCCESS && currentRsvpData && (

@@ -11,6 +11,7 @@ interface RsvpFormProps {
   config: EventConfig;
   existingRsvpsCount: number;
   isVotingClosed: boolean;
+  initialData?: RsvpData;
 }
 
 export const INITIAL_TIERS: TicketTier[] = [
@@ -19,20 +20,21 @@ export const INITIAL_TIERS: TicketTier[] = [
   { id: 'standard', name: 'STANDARD ECHO', description: 'Acceso General', stock: 25, color: 'text-gray-400', gradient: 'from-gray-600/20 to-gray-900/40', border: 'border-white/10', perks: ['Acceso General'] }
 ];
 
-export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptions, config, existingRsvpsCount, isVotingClosed }) => {
+export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptions, config, existingRsvpsCount, isVotingClosed, initialData }) => {
   const winningVenue = config.winningVenueId ? venueOptions.find(v => v.id === config.winningVenueId) : null;
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<RsvpData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    selectedVenue: winningVenue || null,
-    selectedTier: undefined,
-    guestCount: 0,
-    isAttending: true,
-    songRequest: '',
-    timestamp: Date.now()
+    id: initialData?.id,
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    email: initialData?.email || '',
+    selectedVenue: initialData?.selectedVenue || winningVenue || null,
+    selectedTier: initialData?.selectedTier || undefined,
+    guestCount: initialData?.guestCount || 0,
+    isAttending: initialData?.isAttending ?? true,
+    songRequest: initialData?.songRequest || '',
+    timestamp: initialData?.timestamp || Date.now()
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

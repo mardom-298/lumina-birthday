@@ -45,6 +45,7 @@ export interface EventConfig {
 }
 
 export interface RsvpData {
+  id?: string;
   firstName: string;
   lastName: string;
   email: string;
