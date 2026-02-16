@@ -496,7 +496,12 @@ function App() {
       </div>
 
       <div className="z-10 w-full md:w-auto transition-all duration-1000 ease-in-out relative flex flex-col items-center max-w-md md:max-w-7xl mx-auto">
-        <GuestHelp appState={appState} className="top-4 right-4" isVotingClosed={isVotingClosed} hasTickets={!!(currentRsvpData?.ticketIds && currentRsvpData.ticketIds.length > 0)} />
+        <GuestHelp
+          appState={appState}
+          className={appState === AppState.RSVP ? "fixed top-4 right-4 md:top-8 md:right-8 z-[100]" : "absolute top-6 right-6 md:top-8 md:right-8 z-[60]"}
+          isVotingClosed={isVotingClosed}
+          hasTickets={!!(currentRsvpData?.ticketIds && currentRsvpData.ticketIds.length > 0)}
+        />
 
         {appState === AppState.LOCKED && (
           <UnlockScreen onUnlock={handleUnlock} config={config} onAdminEnter={handleAdminEnter} guestList={guestList} />

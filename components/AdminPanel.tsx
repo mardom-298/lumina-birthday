@@ -219,10 +219,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     // 1. Get current sales counts to calculate NET stock
     // We need to know how many are already sold to subtract from the new capacity
     let platinumSold = 0;
+    let totalAllGuests = 0;
     let emeraldSold = 0;
     let standardSold = 0;
 
     try {
+      // Calculate total +1s
+      const { data: allGuestCounts } = await supabase.from('rsvps').select('guest_count');
+      if (allGuestCounts) {
+        totalAllGuests = allGuestCounts.reduce((sum, item) => sum + (item.guest_count || 0), 0);
+      }
+
       const { count: pCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'platinum');
       const { count: eCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'emerald');
       const { count: sCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'standard');
@@ -245,7 +252,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     // Stock = Capacity - Sold
     const platinumStock = Math.max(0, platinumCapacity - platinumSold);
     const emeraldStock = Math.max(0, emeraldCapacity - emeraldSold);
-    const standardStock = Math.max(0, standardCapacity - standardSold);
+    const standardStock = Math.max(0, standardCapacity - (standardSold + totalAllGuests));
 
     try {
       // Parallel update for efficiency
@@ -322,6 +329,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
           <NavItem icon={ScanLine} label="Escanear QR" tab="scan" />
           <NavItem icon={Users} label="Invitados" tab="invitados" />
           <NavItem icon={Star} label="Editar Ambientes" tab="sedes" />
+          <NavItem icon={Ticket} label="Entradas" tab="entradas" />
           <NavItem icon={Settings} label="Ajustes" tab="ajustes" />
         </nav>
         <button onClick={onExit} className="w-full p-4 rounded-xl border border-white/10 text-gray-400 hover:text-white flex items-center justify-center gap-2 font-black text-[10px] uppercase transition-colors hover:bg-red-500/10 hover:text-red-500">

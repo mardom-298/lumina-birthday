@@ -55,7 +55,10 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
           return; // Keep INITIAL_TIERS as fallback
         }
         if (data && data.length > 0) {
-          setTiers(data.map((t: any) => ({
+          const tierOrder = ['platinum', 'emerald', 'standard'];
+          const sortedData = data.sort((a, b) => tierOrder.indexOf(a.id) - tierOrder.indexOf(b.id));
+
+          setTiers(sortedData.map((t: any) => ({
             id: t.id,
             name: t.name,
             description: t.description || '',
@@ -80,12 +83,18 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_tiers' }, (payload: any) => {
         const updated = payload.new;
         if (updated) {
-          setTiers(prev => prev.map(t => t.id === updated.id ? {
-            ...t,
-            stock: updated.stock,
-            name: updated.name || t.name,
-            description: updated.description || t.description
-          } : t));
+          setTiers(prev => {
+            const newTiers = prev.map(t => t.id === updated.id ? {
+              ...t,
+              stock: updated.stock,
+              name: updated.name || t.name,
+              description: updated.description || t.description,
+              perks: updated.perks || t.perks
+            } : t);
+            // Re-sort just in case
+            const tierOrder = ['platinum', 'emerald', 'standard'];
+            return newTiers.sort((a, b) => tierOrder.indexOf(a.id) - tierOrder.indexOf(b.id));
+          });
         }
       })
       .subscribe();
