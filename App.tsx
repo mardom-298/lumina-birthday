@@ -23,7 +23,8 @@ const DEFAULT_VENUES: VenueOption[] = [
     perks: ['Vista Increíble', 'Música Chill'],
     color: 'from-indigo-500 to-blue-500',
     videoUrl: 'https://v4.cdnpk.net/videvo_files/video/free/2019-05/large_watermarked/190516_06_AZ-Sunset-Timelapses_07_preview.mp4',
-    googleMapsUrl: 'https://maps.app.goo.gl/3f9n'
+    googleMapsUrl: 'https://maps.app.goo.gl/3f9n',
+    mapQuery: 'Skyline Rooftop Lima'
   },
   {
     id: 'club',
@@ -35,7 +36,8 @@ const DEFAULT_VENUES: VenueOption[] = [
     perks: ['Pista Privada', 'DJ de Moda'],
     color: 'from-fuchsia-600 to-purple-600',
     videoUrl: 'https://v4.cdnpk.net/videvo_files/video/free/2013-08/large_watermarked/hd0097_preview.mp4',
-    googleMapsUrl: 'https://maps.app.goo.gl/3f9n'
+    googleMapsUrl: 'https://maps.app.goo.gl/3f9n',
+    mapQuery: 'Neon Pulse Club Lima'
   },
   {
     id: 'pub',
@@ -47,7 +49,8 @@ const DEFAULT_VENUES: VenueOption[] = [
     perks: ['Precios Amigos', 'Ambiente Familiar'],
     color: 'from-orange-500 to-amber-500',
     videoUrl: 'https://v4.cdnpk.net/videvo_files/video/free/2019-11/large_watermarked/190828_07_Experimental_Night_Street_02_preview.mp4',
-    googleMapsUrl: 'https://maps.app.goo.gl/3f9n'
+    googleMapsUrl: 'https://maps.app.goo.gl/3f9n',
+    mapQuery: 'The Urban Pub Lima'
   }
 ];
 

@@ -18,6 +18,7 @@ export interface VenueOption {
   color: string;
   videoUrl?: string;
   googleMapsUrl?: string;
+  mapQuery?: string;
 }
 
 export interface TicketTier {

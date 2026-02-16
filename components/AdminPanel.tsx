@@ -401,8 +401,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                       <input type="text" value={v.videoUrl || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, videoUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-amber-500" placeholder="https://..." />
                     </div>
                     <div>
-                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Enlace Google Maps</label>
-                      <input type="text" value={v.googleMapsUrl || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, googleMapsUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-emerald-500" placeholder="https://maps.app.goo.gl/..." />
+                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Enlace Google Maps (Para botón 'Ir')</label>
+                      <input type="text" value={v.googleMapsUrl || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, googleMapsUrl: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-emerald-500 mb-4" placeholder="https://maps.app.goo.gl/..." />
+                    </div>
+                    <div>
+                      <label className="text-[8px] uppercase text-gray-500 font-black tracking-widest block mb-2">Ubicación Exacta (Plus Code o Dirección para Mapa)</label>
+                      <input type="text" value={v.mapQuery || ''} onChange={(e) => setTempVenues(prev => prev.map(item => item.id === v.id ? { ...item, mapQuery: e.target.value } : item))} className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs font-mono text-blue-400" placeholder="Ej: WXM7+PG Lima" />
                     </div>
                   </div>
                 </div>
