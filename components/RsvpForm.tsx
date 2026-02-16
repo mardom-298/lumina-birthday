@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RsvpData, VenueOption, EventConfig, TicketTier } from '../types';
 import { Music, ArrowRight, ArrowLeft, Ticket, Play, X, Sparkles, Trophy, Timer, ShieldAlert, Smartphone, Users, Crown, Zap, Check, Info, AlertCircle, Star, PartyPopper, CheckCircle2 } from 'lucide-react';
 import { MiniGame } from './MiniGame';
+import { supabase } from '../src/supabaseClient';
 
 interface RsvpFormProps {
   onSubmit: (data: RsvpData) => void;
@@ -40,18 +41,57 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGame, setShowGame] = useState(false);
-  const [tiers, setTiers] = useState<TicketTier[]>(() => {
-    // Dynamic stock calculation based on maxCapacity
-    // Platinum limits to 5 (user requirement), Emerald to 12.
-    // Standard takes the rest of the capacity.
-    const capacity = config.maxCapacity || 42; // Fallback to 42 (5+12+25)
-    return INITIAL_TIERS.map(t => {
-      if (t.id === 'platinum') return { ...t, stock: 5 };
-      if (t.id === 'emerald') return { ...t, stock: 12 };
-      if (t.id === 'standard') return { ...t, stock: Math.max(0, capacity - 17) };
-      return t;
-    });
-  });
+  const [tiers, setTiers] = useState<TicketTier[]>(INITIAL_TIERS);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [tiersLoading, setTiersLoading] = useState(true);
+
+  // Load tiers from Supabase on mount + subscribe to real-time changes
+  useEffect(() => {
+    const fetchTiers = async () => {
+      try {
+        const { data, error } = await supabase.from('ticket_tiers').select('*').order('stock', { ascending: true });
+        if (error) {
+          console.error('Error fetching tiers:', error);
+          return; // Keep INITIAL_TIERS as fallback
+        }
+        if (data && data.length > 0) {
+          setTiers(data.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description || '',
+            stock: t.stock,
+            color: t.color || 'text-gray-400',
+            gradient: t.gradient || 'from-gray-600/20 to-gray-900/40',
+            border: t.border || 'border-white/10',
+            perks: t.perks || []
+          })));
+        }
+      } catch (e) {
+        console.error('Tier fetch exception:', e);
+      } finally {
+        setTiersLoading(false);
+      }
+    };
+    fetchTiers();
+
+    // Real-time subscription to tier stock changes
+    const channel = supabase
+      .channel('ticket-tiers-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_tiers' }, (payload: any) => {
+        const updated = payload.new;
+        if (updated) {
+          setTiers(prev => prev.map(t => t.id === updated.id ? {
+            ...t,
+            stock: updated.stock,
+            name: updated.name || t.name,
+            description: updated.description || t.description
+          } : t));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // Dynamic total steps based on voting status
   const totalSteps = isVotingClosed ? 6 : 3;
@@ -106,15 +146,37 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
     else setStep(step - 1);
   };
 
-  const onGameComplete = () => {
+  const onGameComplete = async () => {
     setShowGame(false);
-    // Decrement stock for the selected tier
-    if (formData.selectedTier) {
-      setTiers(prev => prev.map(t =>
-        t.id === formData.selectedTier?.id ? { ...t, stock: Math.max(0, t.stock - 1) } : t
-      ));
+    setClaimError(null);
+
+    if (!formData.selectedTier) return;
+
+    // Atomic stock decrement via Supabase RPC
+    try {
+      const { data, error } = await supabase.rpc('claim_ticket', { tier_id: formData.selectedTier.id });
+
+      if (error) {
+        console.error('Claim ticket RPC error:', error);
+        setClaimError('Error al reclamar boleto. Intenta de nuevo.');
+        return;
+      }
+
+      if (data === -1) {
+        // Stock ran out while playing the game
+        setClaimError(`¡Lo sentimos! Los boletos ${formData.selectedTier.name} se agotaron mientras jugabas. Elige otra categoría.`);
+        // Deselect the sold-out tier
+        updateField('selectedTier', undefined);
+        return;
+      }
+
+      // Success! Stock was decremented atomically
+      // The real-time subscription will update the UI for everyone else
+      setStep(4); // Go to acompañantes
+    } catch (e) {
+      console.error('Claim ticket exception:', e);
+      setClaimError('Error de conexión. Intenta de nuevo.');
     }
-    setStep(4); // Go to acompañantes
   };
 
   // Submit for voting-only flow
@@ -337,7 +399,13 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
         {step === 3 && isVotingClosed && (
           <div className="w-full p-8 sm:p-12 text-center animate-fade-in">
             <h2 className="text-3xl font-serif italic mb-2">Categoría</h2>
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-10">SELECCIONA TU PASE DIGITAL</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-6">SELECCIONA TU PASE DIGITAL</p>
+            {claimError && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6 flex items-center gap-3 max-w-xl mx-auto animate-fade-in">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                <p className="text-[11px] text-red-400 text-left">{claimError}</p>
+              </div>
+            )}
             <div className="space-y-4 max-w-xl mx-auto">
               {tiers.map(tier => {
                 const isAgotado = tier.stock <= 0;

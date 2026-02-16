@@ -656,7 +656,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                             const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined }));
                             onUpdateGuests(resetGuests);
 
-                            // 3. Clear ALL localStorage (not just lumina_ prefix)
+                            // 3. Reset ticket tier stock to defaults
+                            await supabase.from('ticket_tiers').update({ stock: 5 }).eq('id', 'platinum');
+                            await supabase.from('ticket_tiers').update({ stock: 12 }).eq('id', 'emerald');
+                            await supabase.from('ticket_tiers').update({ stock: 25 }).eq('id', 'standard');
+
+                            // 4. Clear ALL localStorage
                             localStorage.clear();
 
                             // 4. Reload with cache bust

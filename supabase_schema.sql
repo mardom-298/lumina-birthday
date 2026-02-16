@@ -34,5 +34,42 @@ create table rsvps (
   created_at timestamptz default now()
 );
 
+-- 4. TICKET TIERS (Stock-tracked categories)
+create table ticket_tiers (
+  id text primary key,
+  name text not null,
+  description text,
+  stock int not null default 0,
+  color text,
+  gradient text,
+  border text,
+  perks text[]
+);
+
+-- Insert default tiers
+insert into ticket_tiers (id, name, description, stock, color, gradient, border, perks) values
+  ('platinum', 'PLATINUM VIP', 'Acceso total + Barra Libre', 5, 'text-amber-400', 'from-amber-400/20 to-amber-900/40', 'border-amber-400/30', ARRAY['Barra Libre', 'Zona VIP', 'Meet & Greet']),
+  ('emerald', 'EMERALD GUEST', 'Acceso Preferencial', 12, 'text-emerald-400', 'from-emerald-400/20 to-emerald-900/40', 'border-emerald-400/30', ARRAY['Zona Preferencial', 'Welcome Drink']),
+  ('standard', 'STANDARD ECHO', 'Acceso General', 25, 'text-gray-400', 'from-gray-600/20 to-gray-900/40', 'border-white/10', ARRAY['Acceso General']);
+
+-- Atomic stock decrement function (prevents double-claiming)
+create or replace function claim_ticket(tier_id text)
+returns int as $$
+declare
+  remaining int;
+begin
+  update ticket_tiers
+  set stock = stock - 1
+  where id = tier_id and stock > 0
+  returning stock into remaining;
+
+  if remaining is null then
+    return -1; -- No stock available
+  end if;
+
+  return remaining;
+end;
+$$ language plpgsql;
+
 -- Enable Realtime (so Admin Panel updates instantly)
-alter publication supabase_realtime add table config, guests, rsvps;
+alter publication supabase_realtime add table config, guests, rsvps, ticket_tiers;
