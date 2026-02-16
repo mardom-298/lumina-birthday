@@ -73,21 +73,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
     // Slight delay to ensure DOM is ready
     setTimeout(async () => {
+      const element = document.getElementById("qr-reader");
+      if (!element) {
+        setCameraError("Error interno: Elemento de cámara no encontrado.");
+        return;
+      }
+
       try {
-        const scanner = new Html5Qrcode("qr-reader");
+        const scanner = new Html5Qrcode("qr-reader", { verbose: false });
         qrScannerRef.current = scanner;
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
           (decodedText) => handleQrResult(decodedText),
-          () => { }
+          (errorMessage) => {
+            // Ignoramos errores de escaneo frame por frame, pero si es critico podriamos loguearlo
+            // console.log(errorMessage); 
+          }
         );
         setCameraActive(true);
       } catch (err: any) {
+        console.error("Camera start error:", err);
         setCameraError(err?.message || 'No se pudo acceder a la cámara. Verifica https local o permisos.');
         setCameraActive(false);
       }
-    }, 100);
+    }, 300);
   };
 
   const stopCamera = cleanupScanner;
@@ -606,15 +616,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                       <button
                         onClick={async () => {
                           try {
-                            // 1. Wipe DB (RSVPs)
-                            const { error } = await supabase.from('rsvps').delete().neq('id', 0); // Delete all
-                            if (error) console.error('Error deleting RSVPs:', error);
+                            // 1. Wipe DB (RSVPs) - Deleting all where ID is not null (which is all)
+                            const { error } = await supabase.from('rsvps').delete().not('id', 'is', null);
+                            if (error) {
+                              console.error('Error deleting RSVPs:', error);
+                              alert('Error al borrar BD: ' + error.message);
+                              return;
+                            }
 
-                            // 2. Reset Guests (local only for now as guests are mock/prop, but if they were DB they should be reset too)
-                            // Assuming guestList is passed from App which manages it. We can't easily reset a prop list permanently without a callback, 
-                            // but we can try to trigger an update if the parent allows. 
-                            // Actually, onUpdateGuests is available.
-                            const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined }));
+                            // 2. Reset Guests (local only for now as guests are mock/prop)
+                            const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined, phone: g.phone })); // Copy to ensure new ref
                             onUpdateGuests(resetGuests);
 
                             // 3. Clear LocalStorage
