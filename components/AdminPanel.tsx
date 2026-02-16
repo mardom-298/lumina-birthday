@@ -24,7 +24,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   const [tempConfig, setTempConfig] = useState<EventConfig>(config);
   const [tempVenues, setTempVenues] = useState<VenueOption[]>(venues);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'guardando' | 'exito'>('idle');
-  const [scanResult, setScanResult] = useState<{ valid: boolean; data?: RsvpData; message?: string } | null>(null);
+  const [scanResult, setScanResult] = useState<{ valid: boolean; alreadyUsed?: boolean; data?: RsvpData; message?: string; scannedAt?: string } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -41,12 +41,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     }
   }, [activeTab]);
 
-  const handleQrResult = (decodedText: string) => {
+  const handleQrResult = async (decodedText: string) => {
     // Stop camera after successful scan
     stopCameraStream();
+
     const found = rsvps.find(r => r.ticketIds?.includes(decodedText));
-    if (found) setScanResult({ valid: true, data: found, message: "Pase Válido" });
-    else setScanResult({ valid: false, message: "Pase No Encontrado" });
+    if (!found) {
+      setScanResult({ valid: false, message: "Pase No Encontrado" });
+      return;
+    }
+
+    // Check if ticket was already used
+    try {
+      const { data: existingScan } = await supabase
+        .from('ticket_scans')
+        .select('*')
+        .eq('ticket_id', decodedText)
+        .maybeSingle();
+
+      if (existingScan) {
+        // Already scanned before!
+        const scanTime = new Date(existingScan.scanned_at).toLocaleTimeString('es-PE', {
+          hour: '2-digit', minute: '2-digit', hour12: true
+        });
+        setScanResult({
+          valid: true,
+          alreadyUsed: true,
+          data: found,
+          message: "Pase Ya Utilizado",
+          scannedAt: scanTime
+        });
+        return;
+      }
+
+      // First time scanning — record it
+      await supabase.from('ticket_scans').insert({
+        ticket_id: decodedText,
+        guest_name: `${found.firstName} ${found.lastName}`,
+        guest_email: found.email,
+        tier_name: found.selectedTier?.name || 'N/A'
+      });
+
+      setScanResult({ valid: true, data: found, message: "✓ Acceso Permitido" });
+    } catch (err) {
+      console.error('Scan DB error:', err);
+      // Still show as valid even if DB fails
+      setScanResult({ valid: true, data: found, message: "Pase Válido (sin registro)" });
+    }
   };
 
   const stopCameraStream = () => {
@@ -560,14 +601,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 </div>
               </>
             ) : (
-              <div className={`p-8 rounded-[2rem] border text-center w-full max-w-sm ${scanResult.valid ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+              <div className={`p-8 rounded-[2rem] border text-center w-full max-w-sm ${!scanResult.valid
+                ? 'bg-red-500/10 border-red-500/30'
+                : scanResult.alreadyUsed
+                  ? 'bg-amber-500/10 border-amber-500/30'
+                  : 'bg-emerald-500/10 border-emerald-500/30'
+                }`}>
                 <div className="mb-3">
-                  {scanResult.valid
-                    ? <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                    : <XCircle className="w-12 h-12 text-red-400 mx-auto" />}
+                  {!scanResult.valid
+                    ? <XCircle className="w-12 h-12 text-red-400 mx-auto" />
+                    : scanResult.alreadyUsed
+                      ? <AlertCircle className="w-12 h-12 text-amber-400 mx-auto" />
+                      : <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+                  }
                 </div>
                 <h3 className="font-bold text-lg">{scanResult.message}</h3>
-                {scanResult.valid && <p className="text-xs opacity-50 mt-1">{scanResult.data?.firstName} {scanResult.data?.lastName}</p>}
+                {scanResult.valid && (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm text-white font-bold">{scanResult.data?.firstName} {scanResult.data?.lastName}</p>
+                    <p className="text-[10px] text-gray-500">{scanResult.data?.email}</p>
+                    {scanResult.data?.selectedTier && (
+                      <span className={`inline-block text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full mt-2 ${scanResult.data.selectedTier.color} bg-white/5 border border-white/10`}>
+                        {scanResult.data.selectedTier.name}
+                      </span>
+                    )}
+                    {scanResult.alreadyUsed && scanResult.scannedAt && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-3">
+                        <p className="text-[10px] text-amber-400 font-bold">
+                          ⚠️ Este pase ya fue escaneado a las {scanResult.scannedAt}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button onClick={() => { setScanResult(null); setCameraError(null); }} className="mt-6 px-8 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Escanear Otro</button>
               </div>
             )}
@@ -709,7 +775,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                             await supabase.from('ticket_tiers').update({ stock: 12 }).eq('id', 'emerald');
                             await supabase.from('ticket_tiers').update({ stock: 25 }).eq('id', 'standard');
 
-                            // 4. Clear ALL localStorage
+                            // 4. Clear all ticket scan records
+                            const { data: allScans } = await supabase.from('ticket_scans').select('id');
+                            if (allScans && allScans.length > 0) {
+                              for (const scan of allScans) {
+                                await supabase.from('ticket_scans').delete().eq('id', scan.id);
+                              }
+                            }
+
+                            // 5. Clear ALL localStorage
                             localStorage.clear();
 
                             // 4. Reload with cache bust

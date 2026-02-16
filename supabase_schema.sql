@@ -71,5 +71,15 @@ begin
 end;
 $$ language plpgsql;
 
+-- 5. TICKET SCANS (Tracks scanned/used tickets at the door)
+create table ticket_scans (
+  id uuid default gen_random_uuid() primary key,
+  ticket_id text unique not null,
+  guest_name text,
+  guest_email text,
+  tier_name text,
+  scanned_at timestamptz default now()
+);
+
 -- Enable Realtime (so Admin Panel updates instantly)
-alter publication supabase_realtime add table config, guests, rsvps, ticket_tiers;
+alter publication supabase_realtime add table config, guests, rsvps, ticket_tiers, ticket_scans;
