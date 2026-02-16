@@ -464,7 +464,7 @@ function App() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-900/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '-2s' }}></div>
       </div>
 
-      <div className="z-10 w-full md:w-auto transition-all duration-1000 ease-in-out relative flex flex-col items-center max-w-md md:max-w-5xl mx-auto">
+      <div className="z-10 w-full md:w-auto transition-all duration-1000 ease-in-out relative flex flex-col items-center max-w-md md:max-w-7xl mx-auto">
         <GuestHelp appState={appState} className="top-4 right-4" isVotingClosed={isVotingClosed} hasTickets={!!(currentRsvpData?.ticketIds && currentRsvpData.ticketIds.length > 0)} />
 
         {appState === AppState.LOCKED && (

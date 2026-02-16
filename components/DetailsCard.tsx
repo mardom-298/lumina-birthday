@@ -181,7 +181,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
   };
 
   return (
-    <div className="w-full max-w-md md:max-w-6xl mx-auto animate-fade-in-up relative px-2 sm:px-0 pb-40 md:pb-10">
+    <div className="w-full max-w-md md:max-w-7xl mx-auto animate-fade-in-up relative px-2 sm:px-0 pb-40 md:pb-0 md:h-[85vh] md:flex md:items-center">
 
       {activeVideo && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in">
@@ -198,7 +198,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
         </div>
       )}
 
-      <div className="glass-card rounded-[3rem] p-1 overflow-hidden relative shadow-2xl border border-white/5 flex flex-col md:flex-row md:h-[750px]">
+      <div className="glass-card rounded-[3rem] p-1 overflow-hidden relative shadow-2xl border border-white/5 flex flex-col md:flex-row md:h-full w-full">
         <div className="h-32 sm:h-44 md:h-full md:w-4/12 bg-zinc-900 relative rounded-t-[2.8rem] md:rounded-l-[2.8rem] md:rounded-tr-none flex items-center justify-center overflow-hidden shrink-0">
           <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent md:bg-gradient-to-r md:from-transparent md:to-zinc-900/80"></div>
