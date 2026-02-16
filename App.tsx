@@ -506,12 +506,7 @@ function App() {
 
       <DesktopNav appState={appState} winningVenue={winningVenue || null} onLogout={handleExit} />
 
-      {appState !== AppState.ADMIN && (
-        <div className="fixed bottom-4 right-6 sm:bottom-6 sm:right-8 z-50 pointer-events-none flex flex-col items-end opacity-20 transition-all">
-          <p className="text-[9px] sm:text-[10px] font-mono tracking-[0.2em] text-white uppercase">{currentTime}</p>
-          <p className="text-[7px] sm:text-[8px] font-mono tracking-[0.4em] text-white uppercase mt-0.5">MARINO · 28</p>
-        </div>
-      )}
+
     </main>
   );
 }
