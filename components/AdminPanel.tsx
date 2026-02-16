@@ -56,7 +56,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   const cleanupScanner = async () => {
     if (qrScannerRef.current) {
       try {
-        await qrScannerRef.current.stop();
+        const state = qrScannerRef.current.getState();
+        if (state === 2) { // SCANNING
+          await qrScannerRef.current.stop();
+        }
         qrScannerRef.current.clear();
       } catch (e) {
         console.warn("Error stopping scanner", e);
@@ -67,37 +70,58 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   };
 
   const startCamera = async () => {
-    await cleanupScanner(); // Ensure clean slate
+    await cleanupScanner();
     setCameraError(null);
     setScanResult(null);
 
-    // Slight delay to ensure DOM is ready
-    setTimeout(async () => {
-      const element = document.getElementById("qr-reader");
-      if (!element) {
-        setCameraError("Error interno: Elemento de cámara no encontrado.");
-        return;
-      }
+    // First, explicitly request camera permission
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      // Stop the test stream immediately — we just needed the permission grant
+      stream.getTracks().forEach(t => t.stop());
+    } catch (permErr: any) {
+      setCameraError('Permiso de cámara denegado. Habilita la cámara en los ajustes de tu navegador y recarga la página.');
+      return;
+    }
 
+    // Wait for DOM to be ready
+    await new Promise(r => setTimeout(r, 500));
+
+    const element = document.getElementById("qr-reader");
+    if (!element) {
+      setCameraError("Error interno: Elemento de cámara no encontrado en el DOM.");
+      return;
+    }
+    // Clear any leftover content from previous scanner attempts
+    element.innerHTML = '';
+
+    try {
+      const scanner = new Html5Qrcode("qr-reader", { verbose: false });
+      qrScannerRef.current = scanner;
+
+      // Try rear camera first, then front camera as fallback
       try {
-        const scanner = new Html5Qrcode("qr-reader", { verbose: false });
-        qrScannerRef.current = scanner;
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
           (decodedText) => handleQrResult(decodedText),
-          (errorMessage) => {
-            // Ignoramos errores de escaneo frame por frame, pero si es critico podriamos loguearlo
-            // console.log(errorMessage); 
-          }
+          () => { }
         );
-        setCameraActive(true);
-      } catch (err: any) {
-        console.error("Camera start error:", err);
-        setCameraError(err?.message || 'No se pudo acceder a la cámara. Verifica https local o permisos.');
-        setCameraActive(false);
+      } catch (rearErr) {
+        console.warn('Rear camera failed, trying front:', rearErr);
+        await scanner.start(
+          { facingMode: "user" },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          (decodedText) => handleQrResult(decodedText),
+          () => { }
+        );
       }
-    }, 300);
+      setCameraActive(true);
+    } catch (err: any) {
+      console.error("Camera start error:", err);
+      setCameraError(`Error: ${err?.message || 'No se pudo iniciar la cámara'}. Asegúrate de acceder por HTTPS.`);
+      setCameraActive(false);
+    }
   };
 
   const stopCamera = cleanupScanner;
@@ -616,30 +640,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                       <button
                         onClick={async () => {
                           try {
-                            // 1. Wipe DB (RSVPs) - Deleting all where ID is not null (which is all)
-                            const { error } = await supabase.from('rsvps').delete().not('id', 'is', null);
-                            if (error) {
-                              console.error('Error deleting RSVPs:', error);
-                              alert('Error al borrar BD: ' + error.message);
+                            // 1. Wipe DB (RSVPs) — fetch all IDs then delete each
+                            const { data: allRows, error: fetchErr } = await supabase.from('rsvps').select('id');
+                            if (fetchErr) {
+                              alert('Error al leer RSVPs: ' + fetchErr.message);
                               return;
                             }
+                            if (allRows && allRows.length > 0) {
+                              for (const row of allRows) {
+                                await supabase.from('rsvps').delete().eq('id', row.id);
+                              }
+                            }
 
-                            // 2. Reset Guests (local only for now as guests are mock/prop)
-                            const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined, phone: g.phone })); // Copy to ensure new ref
+                            // 2. Reset all guest "used" status in DB
+                            const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined }));
                             onUpdateGuests(resetGuests);
 
-                            // 3. Clear LocalStorage
-                            const keysToRemove = [];
-                            for (let i = 0; i < localStorage.length; i++) {
-                              const key = localStorage.key(i);
-                              if (key && key.startsWith('lumina_')) keysToRemove.push(key);
-                            }
-                            keysToRemove.forEach(k => localStorage.removeItem(k));
+                            // 3. Clear ALL localStorage (not just lumina_ prefix)
+                            localStorage.clear();
 
-                            // 4. Reload
-                            window.location.reload();
-                          } catch (e) {
-                            alert('Error al restaurar: ' + e);
+                            // 4. Reload with cache bust
+                            window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+                          } catch (e: any) {
+                            alert('Error al restaurar: ' + (e?.message || e));
                           }
                         }}
                         className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-[10px] tracking-widest transition-all active:scale-95"
