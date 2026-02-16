@@ -76,7 +76,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
     // First, explicitly request camera permission
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       // Stop the test stream immediately — we just needed the permission grant
       stream.getTracks().forEach(t => t.stop());
     } catch (permErr: any) {
@@ -92,31 +92,68 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       setCameraError("Error interno: Elemento de cámara no encontrado en el DOM.");
       return;
     }
-    // Clear any leftover content from previous scanner attempts
-    element.innerHTML = '';
 
     try {
       const scanner = new Html5Qrcode("qr-reader", { verbose: false });
       qrScannerRef.current = scanner;
 
+      const scanConfig = {
+        fps: 10,
+        qrbox: { width: 200, height: 200 },
+        aspectRatio: 1.0,
+        disableFlip: false
+      };
+
       // Try rear camera first, then front camera as fallback
+      let started = false;
       try {
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 200, height: 200 } },
+          scanConfig,
           (decodedText) => handleQrResult(decodedText),
           () => { }
         );
+        started = true;
       } catch (rearErr) {
         console.warn('Rear camera failed, trying front:', rearErr);
-        await scanner.start(
-          { facingMode: "user" },
-          { fps: 10, qrbox: { width: 200, height: 200 } },
-          (decodedText) => handleQrResult(decodedText),
-          () => { }
-        );
+        try {
+          await scanner.start(
+            { facingMode: "user" },
+            scanConfig,
+            (decodedText) => handleQrResult(decodedText),
+            () => { }
+          );
+          started = true;
+        } catch (frontErr) {
+          console.error('Front camera also failed:', frontErr);
+        }
       }
-      setCameraActive(true);
+
+      if (started) {
+        setCameraActive(true);
+        // Force video element to be visible (html5-qrcode sometimes hides it)
+        setTimeout(() => {
+          const video = element.querySelector('video');
+          if (video) {
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'cover';
+            video.style.display = 'block';
+            video.style.position = 'absolute';
+            video.style.top = '0';
+            video.style.left = '0';
+          }
+          // Also ensure the container created by html5-qrcode fills parent
+          const innerDiv = element.querySelector('#qr-shaded-region');
+          if (innerDiv) {
+            (innerDiv as HTMLElement).style.position = 'absolute';
+            (innerDiv as HTMLElement).style.inset = '0';
+          }
+        }, 300);
+      } else {
+        setCameraError('No se pudo acceder a ninguna cámara. Intenta usar "Subir Imagen" o verifica que no haya otra app usando la cámara.');
+        setCameraActive(false);
+      }
     } catch (err: any) {
       console.error("Camera start error:", err);
       setCameraError(`Error: ${err?.message || 'No se pudo iniciar la cámara'}. Asegúrate de acceder por HTTPS.`);
@@ -476,7 +513,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
             {!scanResult ? (
               <>
                 {/* Camera viewport */}
-                <div id="qr-reader" className="w-full max-w-sm aspect-square bg-black border border-white/10 rounded-[2rem] overflow-hidden relative">
+                <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} className="max-w-sm bg-black border border-white/10 rounded-[2rem] overflow-hidden relative">
                   {!cameraActive && !cameraError && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-gray-500">
                       <ScanLine className="w-12 h-12 opacity-30" />
