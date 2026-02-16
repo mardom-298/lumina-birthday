@@ -6,6 +6,7 @@ import {
   XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette
 } from 'lucide-react';
 import { Html5Qrcode } from "html5-qrcode";
+import { supabase } from '../src/supabaseClient';
 
 interface AdminPanelProps {
   config: EventConfig;
@@ -51,32 +52,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     else setScanResult({ valid: false, message: "Pase No Encontrado" });
   };
 
-  const startCamera = async () => {
-    setCameraError(null);
-    setScanResult(null);
-    try {
-      const scanner = new Html5Qrcode("qr-reader");
-      qrScannerRef.current = scanner;
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
-        (decodedText) => handleQrResult(decodedText),
-        () => { } // ignore scan errors (no QR found in frame)
-      );
-      setCameraActive(true);
-    } catch (err: any) {
-      setCameraError(err?.message || 'No se pudo acceder a la cámara. Verifica los permisos.');
-      setCameraActive(false);
-    }
-  };
-
-  const stopCamera = async () => {
+  // Robust cleanup to prevent "scanner already started" errors
+  const cleanupScanner = async () => {
     if (qrScannerRef.current) {
-      await qrScannerRef.current.stop().catch(() => { });
+      try {
+        await qrScannerRef.current.stop();
+        qrScannerRef.current.clear();
+      } catch (e) {
+        console.warn("Error stopping scanner", e);
+      }
       qrScannerRef.current = null;
     }
     setCameraActive(false);
   };
+
+  const startCamera = async () => {
+    await cleanupScanner(); // Ensure clean slate
+    setCameraError(null);
+    setScanResult(null);
+
+    // Slight delay to ensure DOM is ready
+    setTimeout(async () => {
+      try {
+        const scanner = new Html5Qrcode("qr-reader");
+        qrScannerRef.current = scanner;
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+          (decodedText) => handleQrResult(decodedText),
+          () => { }
+        );
+        setCameraActive(true);
+      } catch (err: any) {
+        setCameraError(err?.message || 'No se pudo acceder a la cámara. Verifica https local o permisos.');
+        setCameraActive(false);
+      }
+    }, 100);
+  };
+
+  const stopCamera = cleanupScanner;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -590,16 +604,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     <p className="text-xs text-red-400 font-bold text-center">¿Estás seguro? Esta acción no se puede deshacer.</p>
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          // Clear all lumina localStorage keys
-                          const keysToRemove = [];
-                          for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i);
-                            if (key && key.startsWith('lumina_')) keysToRemove.push(key);
+                        onClick={async () => {
+                          try {
+                            // 1. Wipe DB (RSVPs)
+                            const { error } = await supabase.from('rsvps').delete().neq('id', 0); // Delete all
+                            if (error) console.error('Error deleting RSVPs:', error);
+
+                            // 2. Reset Guests (local only for now as guests are mock/prop, but if they were DB they should be reset too)
+                            // Assuming guestList is passed from App which manages it. We can't easily reset a prop list permanently without a callback, 
+                            // but we can try to trigger an update if the parent allows. 
+                            // Actually, onUpdateGuests is available.
+                            const resetGuests = guestList.map(g => ({ ...g, used: false, usedAt: undefined }));
+                            onUpdateGuests(resetGuests);
+
+                            // 3. Clear LocalStorage
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                              const key = localStorage.key(i);
+                              if (key && key.startsWith('lumina_')) keysToRemove.push(key);
+                            }
+                            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                            // 4. Reload
+                            window.location.reload();
+                          } catch (e) {
+                            alert('Error al restaurar: ' + e);
                           }
-                          keysToRemove.forEach(k => localStorage.removeItem(k));
-                          // Reload the app
-                          window.location.reload();
                         }}
                         className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-[10px] tracking-widest transition-all active:scale-95"
                       >
