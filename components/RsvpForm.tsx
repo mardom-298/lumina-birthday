@@ -40,7 +40,18 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGame, setShowGame] = useState(false);
-  const [tiers, setTiers] = useState<TicketTier[]>(INITIAL_TIERS);
+  const [tiers, setTiers] = useState<TicketTier[]>(() => {
+    // Dynamic stock calculation based on maxCapacity
+    // Platinum limits to 5 (user requirement), Emerald to 12.
+    // Standard takes the rest of the capacity.
+    const capacity = config.maxCapacity || 42; // Fallback to 42 (5+12+25)
+    return INITIAL_TIERS.map(t => {
+      if (t.id === 'platinum') return { ...t, stock: 5 };
+      if (t.id === 'emerald') return { ...t, stock: 12 };
+      if (t.id === 'standard') return { ...t, stock: Math.max(0, capacity - 17) };
+      return t;
+    });
+  });
 
   // Dynamic total steps based on voting status
   const totalSteps = isVotingClosed ? 6 : 3;

@@ -17,7 +17,11 @@ export const GuestDock: React.FC<GuestDockProps> = ({ appState, config, winningV
   }
 
   const handleUbiClick = () => {
-    window.dispatchEvent(new CustomEvent('switch-to-map'));
+    if (appState === AppState.SUCCESS && winningVenue) {
+      window.open(winningVenue.googleMapsUrl || `https://www.google.com/maps?q=${encodeURIComponent(winningVenue.name)}`, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('switch-to-map'));
+    }
   };
 
   const handleVibeClick = () => {
