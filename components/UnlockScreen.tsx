@@ -206,6 +206,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
     setVerificationState('idle');
     setMatchedGuest(null);
     setPhoneInput('');
+    // Optional: could show a toast here, but clearing is immediate feedback
   };
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -296,7 +297,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
 
       {/* ── Center Section: Date + Phone ────────────────────── */}
       {/* ── Center Content Group: Date + Input + Button ────── */}
-      <div className="z-20 flex flex-col items-center justify-center w-full max-w-xl px-5 space-y-6 sm:space-y-8 min-h-0 py-10">
+      <div className="z-20 flex flex-col items-center justify-center w-full max-w-3xl px-5 space-y-6 sm:space-y-8 min-h-0 py-10">
 
         {/* Date Display */}
         <div className="space-y-1.5 sm:space-y-3 select-none shrink-0">
@@ -426,7 +427,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
                 </div>
                 <p className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.15em] leading-relaxed">¿Eres tú? Mantén presionado el botón para entrar</p>
                 <button onClick={handleResetVerification} className="text-[8px] sm:text-[9px] text-gray-600 hover:text-gray-400 font-bold uppercase tracking-widest transition-colors underline underline-offset-4 decoration-gray-800 hover:decoration-gray-600">
-                  No soy yo
+                  No soy yo (Borrar)
                 </button>
               </div>
             </div>

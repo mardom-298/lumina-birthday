@@ -385,12 +385,29 @@ function App() {
     setCurrentGuest(guest); // Set current guest context
 
     // Check if this guest already voted (has RSVP in DB)
-    // Try to match by PHONE first (reliable), fallback to Name
-    const { data: existingRsvp } = await supabase
+    // Prioritize clean phone match
+    let existingRsvp = null;
+
+    // 1. Try exact phone match
+    const { data: phoneMatch } = await supabase
       .from('rsvps')
       .select('*')
-      .or(`phone.eq.${guest.phone},first_name.ilike.%${guest.name.split(' ')[0]}%`)
+      .eq('phone', guest.phone)
       .limit(1);
+
+    if (phoneMatch && phoneMatch.length > 0) {
+      existingRsvp = phoneMatch;
+    } else {
+      // 2. Fallback to name match (less reliable but useful for legacy/manual entries)
+      const { data: nameMatch } = await supabase
+        .from('rsvps')
+        .select('*')
+        .ilike('first_name', `%${guest.name.split(' ')[0]}%`)
+        .eq('last_name', guest.name.split(' ').slice(1).join(' ')) // rough match
+        .limit(1);
+
+      if (nameMatch && nameMatch.length > 0) existingRsvp = nameMatch;
+    }
 
     if (existingRsvp && existingRsvp.length > 0) {
       // Guest already has an RSVP
