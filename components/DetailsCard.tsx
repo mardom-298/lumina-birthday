@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, MapPin, Sparkles, Vote, Play, X, Map, Timer, Trophy, AlertCircle, Wallet, Music, Disc, ExternalLink, ChevronRight, Pause, Headphones } from 'lucide-react';
+import { Calendar, Clock, MapPin, Sparkles, Vote, Play, X, Map, Timer, Trophy, AlertCircle, Wallet, Music, Disc, ExternalLink, ChevronRight, Pause, Headphones, LogOut } from 'lucide-react';
 import { EventConfig, VenueOption } from '../types';
 
 interface DetailsCardProps {
   onContinue: () => void;
+  onExit?: () => void;
   config: EventConfig;
   venues: VenueOption[];
   hasAlreadyVoted?: boolean;
@@ -137,7 +138,7 @@ const VenueDetailsModal = ({ venue, onClose }: { venue: VenueOption; onClose: ()
   </div>
 );
 
-export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, venues, hasAlreadyVoted = false }) => {
+export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, config, venues, hasAlreadyVoted = false }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'vibes' | 'music'>('info');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(PLAYLIST_TRACKS[0].id);
   const isVotingClosed = config.votingDeadline ? new Date(config.votingDeadline).getTime() < Date.now() : false;
@@ -361,6 +362,17 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, config, ve
             <button onClick={onContinue} className="group w-full py-5 font-black rounded-[2rem] flex items-center justify-center gap-4 bg-white text-black active:scale-95 transition-all shadow-2xl shrink-0 z-20">
               {winningVenue || isVotingClosed ? <Sparkles className="w-5 h-5" /> : <Vote className="w-5 h-5" />}
               <span className="text-[10px] tracking-[0.4em] uppercase">{winningVenue || isVotingClosed ? 'RECLAMAR TU PASE' : 'REGISTRARSE Y VOTAR'}</span>
+            </button>
+          )}
+
+          {/* Logout / Exit Button */}
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="w-full py-3 sm:py-4 mt-2 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 font-black uppercase text-[9px] sm:text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 shrink-0 z-20"
+            >
+              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Cerrar Sesión
             </button>
           )}
         </div>

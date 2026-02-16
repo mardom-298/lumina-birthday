@@ -500,7 +500,7 @@ function App() {
         )}
 
         {appState === AppState.INVITATION && (
-          <DetailsCard onContinue={startRsvp} config={config} venues={venues} hasAlreadyVoted={!!currentRsvpData} />
+          <DetailsCard onContinue={startRsvp} onExit={handleExit} config={config} venues={venues} hasAlreadyVoted={!!currentRsvpData} />
         )}
 
         {appState === AppState.RSVP && (
