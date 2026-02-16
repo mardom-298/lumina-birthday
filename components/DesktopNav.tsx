@@ -95,16 +95,7 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({ appState, winningVenue, 
         )}
       </div>
 
-      {appState === AppState.SUCCESS && (
-        <button
-          onClick={onLogout}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 border border-white/15 rounded-full transition-all text-gray-400 text-[10px] font-black uppercase tracking-widest"
-          title="Salir"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Salir</span>
-        </button>
-      )}
+
     </div>
   );
 };
