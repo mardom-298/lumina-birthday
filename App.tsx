@@ -423,7 +423,7 @@ function App() {
     setAppState(AppState.SUCCESS);
   };
 
-  const isVotingClosed = config.votingDeadline ? new Date(config.votingDeadline).getTime() < Date.now() : false;
+  const isVotingClosed = (config.votingDeadline && new Date(config.votingDeadline).getTime() < Date.now()) || !!config.winningVenueId;
   const winningVenue = config.winningVenueId ? venues.find(v => v.id === config.winningVenueId) : venues[0];
 
   return (
