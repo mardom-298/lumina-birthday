@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { VenueOption, EventConfig, RsvpData, GuestEntry } from '../types';
 import {
   BarChart3, Settings, Users, Star, ScanLine, LogOut, CheckCircle2,
-  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette
+  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette, Ticket, Crown, Sparkles
 } from 'lucide-react';
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from '../src/supabaseClient';
@@ -20,13 +20,23 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, onUpdateConfig, onUpdateVenues, onExit, guestList, onUpdateGuests }) => {
-  const [activeTab, setActiveTab] = useState<'panel' | 'sedes' | 'invitados' | 'scan' | 'ajustes'>('panel');
+  const [activeTab, setActiveTab] = useState<'panel' | 'sedes' | 'invitados' | 'scan' | 'ajustes' | 'entradas'>('panel');
   const [tempConfig, setTempConfig] = useState<EventConfig>(config);
   const [tempVenues, setTempVenues] = useState<VenueOption[]>(venues);
+  const [tempTiers, setTempTiers] = useState<any[]>([]); // To store tiers for editing
   const [saveStatus, setSaveStatus] = useState<'idle' | 'guardando' | 'exito'>('idle');
   const [scanResult, setScanResult] = useState<{ valid: boolean; alreadyUsed?: boolean; data?: RsvpData; message?: string; scannedAt?: string } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+
+  useEffect(() => {
+    // Fetch tiers for editing
+    const fetchTiers = async () => {
+      const { data } = await supabase.from('ticket_tiers').select('*').order('stock', { ascending: true }); // order by price/importance usually, but stock works for now
+      if (data) setTempTiers(data);
+    };
+    fetchTiers();
+  }, []);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
@@ -206,20 +216,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   const saveAll = async () => {
     setSaveStatus('guardando');
 
-    // Recalculate stocks based on maxCapacity
-    // Platinum fixed at 5. The rest is divided between Emerald and Standard.
-    const platinumStock = 5;
-    const remainingCapacity = Math.max(0, tempConfig.maxCapacity - platinumStock);
-    const emeraldStock = Math.floor(remainingCapacity / 2);
-    const standardStock = remainingCapacity - emeraldStock; // Handles odd numbers
+    // 1. Get current sales counts to calculate NET stock
+    // We need to know how many are already sold to subtract from the new capacity
+    let platinumSold = 0;
+    let emeraldSold = 0;
+    let standardSold = 0;
+
+    try {
+      const { count: pCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'platinum');
+      const { count: eCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'emerald');
+      const { count: sCount } = await supabase.from('rsvps').select('*', { count: 'exact', head: true }).eq('selected_tier_id', 'standard');
+
+      platinumSold = pCount || 0;
+      emeraldSold = eCount || 0;
+      standardSold = sCount || 0;
+    } catch (err) {
+      console.error("Error fetching sales counts:", err);
+    }
+
+    // 2. Calculate Total Capacity per Tier
+    // Platinum fixed at 4 (User Request).
+    const platinumCapacity = 4;
+    const remainingCapacity = Math.max(0, tempConfig.maxCapacity - platinumCapacity);
+    const emeraldCapacity = Math.floor(remainingCapacity / 2);
+    const standardCapacity = remainingCapacity - emeraldCapacity; // Handles odd numbers
+
+    // 3. Calculate Net Stock (Available to Buy)
+    // Stock = Capacity - Sold
+    const platinumStock = Math.max(0, platinumCapacity - platinumSold);
+    const emeraldStock = Math.max(0, emeraldCapacity - emeraldSold);
+    const standardStock = Math.max(0, standardCapacity - standardSold);
 
     try {
       // Parallel update for efficiency
-      await Promise.all([
+      const updates = [
         supabase.from('ticket_tiers').update({ stock: platinumStock }).eq('id', 'platinum'),
         supabase.from('ticket_tiers').update({ stock: emeraldStock }).eq('id', 'emerald'),
         supabase.from('ticket_tiers').update({ stock: standardStock }).eq('id', 'standard')
-      ]);
+      ];
+
+      // Add perk updates if any
+      if (tempTiers.length > 0) {
+        tempTiers.forEach(tier => {
+          updates.push(supabase.from('ticket_tiers').update({ perks: tier.perks }).eq('id', tier.id));
+        });
+      }
+
+      await Promise.all(updates);
 
       onUpdateConfig(tempConfig);
       onUpdateVenues(tempVenues);
@@ -666,6 +709,84 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
           </div>
         )}
 
+        {activeTab === 'entradas' && (
+          <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-32">
+            <div className="flex items-center gap-3 mb-8">
+              <Ticket className="w-8 h-8 text-amber-500" />
+              <div>
+                <h2 className="text-3xl font-serif italic">Entradas & Beneficios</h2>
+                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-black">Personaliza lo que incluye cada pase</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tempTiers.map((tier) => (
+                <div key={tier.id} className={`glass-card p-6 rounded-[2rem] border ${tier.border} relative overflow-hidden group`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${tier.gradient} opacity-10 group-hover:opacity-20 transition-opacity`}></div>
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className={`text-xl font-black italic ${tier.color}`}>{tier.name}</h3>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{tier.stock} Disp.</p>
+                      </div>
+                      {tier.id === 'platinum' && <Crown className="w-6 h-6 text-amber-400" />}
+                      {tier.id === 'emerald' && <Sparkles className="w-6 h-6 text-emerald-400" />}
+                      {tier.id === 'standard' && <Zap className="w-6 h-6 text-gray-400" />}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] uppercase tracking-widest text-gray-500 font-black">Beneficios (Perks)</label>
+                      <div className="space-y-2">
+                        {tier.perks.map((perk: string, idx: number) => (
+                          <div key={idx} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={perk}
+                              onChange={(e) => {
+                                const newPerks = [...tier.perks];
+                                newPerks[idx] = e.target.value;
+                                setTempTiers(prev => prev.map(t => t.id === tier.id ? { ...t, perks: newPerks } : t));
+                              }}
+                              className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-indigo-500 outline-none"
+                            />
+                            <button
+                              onClick={() => {
+                                const newPerks = tier.perks.filter((_: any, i: number) => i !== idx);
+                                setTempTiers(prev => prev.map(t => t.id === tier.id ? { ...t, perks: newPerks } : t));
+                              }}
+                              className="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-lg transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            setTempTiers(prev => prev.map(t => t.id === tier.id ? { ...t, perks: [...tier.perks, 'Nuevo beneficio'] } : t));
+                          }}
+                          className="w-full py-2 border border-dashed border-white/10 rounded-lg text-[10px] text-gray-500 hover:text-white hover:border-white/30 transition-all uppercase tracking-widest font-bold"
+                        >
+                          + Agregar Beneficio
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="fixed bottom-24 md:bottom-10 right-6 md:right-10 left-6 md:left-auto z-[50]">
+              <button
+                onClick={saveAll}
+                className="w-full md:w-auto px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-[0_10px_40px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+              >
+                {saveStatus === 'guardando' ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                {saveStatus === 'exito' ? '¡CAMBIOS GUARDADOS!' : 'GUARDAR CAMBIOS'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'ajustes' && (
           <div className="max-w-xl mx-auto space-y-8 animate-fade-in">
 
@@ -842,6 +963,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
         <button onClick={() => setActiveTab('scan')} className={activeTab === 'scan' ? 'text-white' : 'text-gray-500'}><ScanLine className="w-5 h-5" /></button>
         <button onClick={() => setActiveTab('invitados')} className={activeTab === 'invitados' ? 'text-white' : 'text-gray-500'}><Users className="w-5 h-5" /></button>
         <button onClick={() => setActiveTab('sedes')} className={activeTab === 'sedes' ? 'text-white' : 'text-gray-500'}><Star className="w-5 h-5" /></button>
+        <button onClick={() => setActiveTab('entradas')} className={activeTab === 'entradas' ? 'text-white' : 'text-gray-500'}><Ticket className="w-5 h-5" /></button>
         <button onClick={() => setActiveTab('ajustes')} className={activeTab === 'ajustes' ? 'text-white' : 'text-gray-500'}><Settings className="w-5 h-5" /></button>
         <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
         <button onClick={onExit} className="text-red-500/70 hover:text-red-500 transition-colors"><LogOut className="w-5 h-5" /></button>
