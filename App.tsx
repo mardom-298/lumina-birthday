@@ -90,9 +90,9 @@ const mapRsvpFromDb = (dbRsvp: any, venues: VenueOption[]): RsvpData => {
     guestCount: dbRsvp.guest_count || 0,
     ticketIds: dbRsvp.ticket_ids || [],
     timestamp: new Date(dbRsvp.created_at).getTime(),
-    isAttending: true, // Default as it's missing in DB schema currently
-    songRequest: '',   // Default as it's missing in DB schema currently
-    phone: dbRsvp.phone // Add phone mapping
+    isAttending: true,
+    songRequest: dbRsvp.song_request || '',
+    phone: dbRsvp.phone
   };
 };
 
@@ -398,12 +398,12 @@ function App() {
     if (phoneMatch && phoneMatch.length > 0) {
       existingRsvp = phoneMatch;
     } else {
-      // 2. Fallback to name match (less reliable but useful for legacy/manual entries)
+      // 2. Fallback: search by first name only (more lenient)
+      const firstName = guest.name.split(' ')[0];
       const { data: nameMatch } = await supabase
         .from('rsvps')
         .select('*')
-        .ilike('first_name', `%${guest.name.split(' ')[0]}%`)
-        .eq('last_name', guest.name.split(' ').slice(1).join(' ')) // rough match
+        .ilike('first_name', `%${firstName}%`)
         .limit(1);
 
       if (nameMatch && nameMatch.length > 0) existingRsvp = nameMatch;
@@ -451,25 +451,30 @@ function App() {
     localStorage.setItem('lumina_rsvp', JSON.stringify(data));
 
     // Save to Supabase
-    // Save to Supabase (Upsert if ID exists or insert new)
     const payload: any = {
       first_name: data.firstName,
       last_name: data.lastName,
       email: data.email,
-      phone: currentGuest?.phone, // Save phone to link session
+      phone: currentGuest?.phone || '', // Save phone to link session
+      song_request: data.songRequest || '',
       selected_venue_id: data.selectedVenue?.id || null,
       selected_tier_id: data.selectedTier?.id || null,
       guest_count: data.guestCount,
       ticket_ids: data.ticketIds,
-      created_at: data.id ? undefined : new Date().toISOString() // Only set created_at on insert
     };
 
-    if (data.id) {
-      // Update existing
-      await supabase.from('rsvps').update(payload).eq('id', data.id);
-    } else {
-      // Insert new
-      await supabase.from('rsvps').insert({ ...payload, created_at: new Date().toISOString() });
+    try {
+      if (data.id) {
+        // Update existing
+        const { error } = await supabase.from('rsvps').update(payload).eq('id', data.id);
+        if (error) console.error('RSVP update error:', error);
+      } else {
+        // Insert new
+        const { error } = await supabase.from('rsvps').insert({ ...payload, created_at: new Date().toISOString() });
+        if (error) console.error('RSVP insert error:', error);
+      }
+    } catch (e) {
+      console.error('RSVP save exception:', e);
     }
 
     setAppState(AppState.SUCCESS);

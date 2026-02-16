@@ -25,6 +25,8 @@ create table rsvps (
   first_name text not null,
   last_name text not null,
   email text,
+  phone text,
+  song_request text,
   selected_venue_id text,
   selected_tier_id text,
   guest_count int default 0,
