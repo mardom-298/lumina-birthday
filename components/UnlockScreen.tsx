@@ -221,7 +221,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-[100dvh] w-full text-center relative overflow-hidden bg-black">
+    <div className="flex flex-col items-center justify-center h-[100dvh] w-full text-center relative overflow-y-auto bg-black">
 
       {/* ── Layered Background ──────────────────────────────── */}
       <div className="absolute inset-0 z-0">
@@ -293,7 +293,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
 
       {/* ── Center Section: Date + Phone ────────────────────── */}
       {/* ── Center Content Group: Date + Input + Button ────── */}
-      <div className="z-20 flex flex-col items-center justify-center w-full max-w-lg px-5 space-y-6 sm:space-y-8 min-h-0 py-10">
+      <div className="z-20 flex flex-col items-center justify-center w-full max-w-xl px-5 space-y-6 sm:space-y-8 min-h-0 py-10">
 
         {/* Date Display */}
         <div className="space-y-1.5 sm:space-y-3 select-none shrink-0">

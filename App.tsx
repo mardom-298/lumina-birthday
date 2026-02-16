@@ -281,6 +281,17 @@ function App() {
           setVenues(record.value);
         }
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rsvps' }, (payload: any) => {
+        const newRsvp = payload.new;
+        if (!newRsvp) return; // Handle delete if needed, but mainly inserts/updates
+        setAllRsvps((prev) => {
+          const exists = prev.find(r => r.id === newRsvp.id);
+          if (exists) {
+            return prev.map(r => r.id === newRsvp.id ? mapRsvpFromDb(newRsvp, venues) : r);
+          }
+          return [...prev, mapRsvpFromDb(newRsvp, venues)];
+        });
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

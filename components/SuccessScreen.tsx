@@ -31,6 +31,8 @@ interface TicketCardProps {
     guestIndex: number;
     isMainGuest: boolean;
     ticketId: string;
+    eventTime: string;
+    eventDate: string;
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({
@@ -38,7 +40,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
     persona,
     guestIndex,
     isMainGuest,
-    ticketId
+    ticketId,
+    eventTime,
+    eventDate
 }) => {
     const [qrUrl, setQrUrl] = useState<string>('');
 
@@ -68,13 +72,14 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
             {/* TOP SECTION: Event Info */}
             <div className="relative z-10 p-6 flex-1 flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                    <div className="flex flex-col">
-                        <span className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">EVENTO 2026</span>
-                        <span className="font-serif italic text-2xl leading-none">Lumina</span>
+                <div className="flex border-b border-white/10 pb-4 mb-4">
+                    <div className="flex-1 border-r border-white/10 pr-4">
+                        <p className="text-[8px] text-gray-500 uppercase tracking-widest mb-1">FECHA</p>
+                        <p className="text-sm font-bold text-white uppercase">{eventDate}</p>
                     </div>
-                    <div className="px-3 py-1 rounded-full border border-white/20 bg-white/5 backdrop-blur-md">
-                        <span className="font-mono text-[9px] font-bold tracking-widest">{data.selectedVenue?.closingTime}</span>
+                    <div className="flex-1 pl-4">
+                        <p className="text-[8px] text-gray-500 uppercase tracking-widest mb-1">HORA</p>
+                        <p className="text-sm font-bold text-white uppercase">{eventTime}</p>
                     </div>
                 </div>
 
@@ -287,14 +292,16 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onEx
             <div className="flex flex-col md:flex-row md:items-start gap-8">
                 {/* Render Tickets Loop (Grid on Desktop) */}
                 <div className="space-y-8 md:space-y-0 md:grid md:grid-cols-2 md:gap-8 flex-1">
-                    {ticketIds.map((id, idx) => (
+                    {ticketIds.map((id, i) => (
                         <TicketCard
-                            key={idx}
+                            key={id}
                             ticketId={id}
                             data={data}
-                            persona={persona}
-                            guestIndex={idx}
-                            isMainGuest={idx === 0}
+                            persona={i === 0 ? persona : null}
+                            guestIndex={i === 0 ? 0 : i}
+                            isMainGuest={i === 0}
+                            eventTime={config.time}
+                            eventDate={config.dateDisplay}
                         />
                     ))}
                 </div>
@@ -305,10 +312,18 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onEx
                         <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-4">CONFIRMACIÓN RÁPIDA</p>
                         <button
                             onClick={handleWhatsApp}
-                            className="w-full py-5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-black text-[11px] tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg"
+                            className="w-full py-5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-black text-[11px] tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg mb-3"
                         >
                             <MessageCircle className="w-5 h-5 fill-black" />
                             CONFIRMAR POR WHATSAPP
+                        </button>
+
+                        <button
+                            onClick={() => window.open(data.selectedVenue?.googleMapsUrl || `https://www.google.com/maps?q=${encodeURIComponent(data.selectedVenue?.name || '')}`, '_blank')}
+                            className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-white/10"
+                        >
+                            <MapPin className="w-4 h-4" />
+                            VER UBICACIÓN
                         </button>
                     </div>
 
