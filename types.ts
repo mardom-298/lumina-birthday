@@ -57,6 +57,7 @@ export interface RsvpData {
   deviceFingerprint?: string;
   timestamp: number;
   ticketIds?: string[];
+  phone?: string;
 }
 
 export enum AppState {

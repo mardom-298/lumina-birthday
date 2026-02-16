@@ -92,6 +92,7 @@ const mapRsvpFromDb = (dbRsvp: any, venues: VenueOption[]): RsvpData => {
     timestamp: new Date(dbRsvp.created_at).getTime(),
     isAttending: true, // Default as it's missing in DB schema currently
     songRequest: '',   // Default as it's missing in DB schema currently
+    phone: dbRsvp.phone // Add phone mapping
   };
 };
 
@@ -209,6 +210,7 @@ const GlobalAudioPlayer = () => {
 function App() {
   const [appState, setAppState] = useState<AppState>(AppState.LOCKED);
   const [currentRsvpData, setCurrentRsvpData] = useState<RsvpData | null>(null);
+  const [currentGuest, setCurrentGuest] = useState<GuestEntry | null>(null); // Track logged in guest
   const [bgMusicPlaying, setBgMusicPlaying] = useState(false);
 
   // ── Supabase State ────────────────────────────────────────────────
@@ -380,11 +382,14 @@ function App() {
     window.dispatchEvent(new CustomEvent('bg-music-play'));
     setBgMusicPlaying(true);
 
+    setCurrentGuest(guest); // Set current guest context
+
     // Check if this guest already voted (has RSVP in DB)
+    // Try to match by PHONE first (reliable), fallback to Name
     const { data: existingRsvp } = await supabase
       .from('rsvps')
       .select('*')
-      .or(`first_name.ilike.%${guest.name.split(' ')[0]}%`)
+      .or(`phone.eq.${guest.phone},first_name.ilike.%${guest.name.split(' ')[0]}%`)
       .limit(1);
 
     if (existingRsvp && existingRsvp.length > 0) {
@@ -434,6 +439,7 @@ function App() {
       first_name: data.firstName,
       last_name: data.lastName,
       email: data.email,
+      phone: currentGuest?.phone, // Save phone to link session
       selected_venue_id: data.selectedVenue?.id || null,
       selected_tier_id: data.selectedTier?.id || null,
       guest_count: data.guestCount,
