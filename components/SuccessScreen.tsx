@@ -341,9 +341,9 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onEx
                     {/* Exit Button */}
                     <button
                         onClick={onExit}
-                        className="w-full py-4 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                        className="w-full py-4 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-white/15 transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest"
                     >
-                        <LogOut className="w-4 h-4" /> SALIR Y CERRAR SESIÓN
+                        <LogOut className="w-4 h-4" /> SALIR
                     </button>
                 </div>
             </div>
