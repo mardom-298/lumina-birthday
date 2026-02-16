@@ -288,7 +288,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, co
                     </div>
                   )}
                   <div className="rounded-[2.5rem] overflow-hidden bg-black border border-white/10 h-72 shadow-2xl relative group">
-                    <iframe title="Maps" width="100%" height="100%" style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) grayscale(0.2)' }} loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(targetVenueForMap.name + " Lima")}&output=embed`}></iframe>
+                    <iframe title="Maps" width="100%" height="100%" style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) grayscale(0.2)' }} loading="lazy" src={`https://www.google.com/maps?q=${encodeURIComponent(targetVenueForMap.name + " Lima")}&output=embed&z=16`}></iframe>
                     <div className="absolute bottom-6 left-6 right-6 p-4 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between animate-fade-in-up">
                       <div className="flex flex-col gap-0.5"><span className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Ambiente</span><span className="text-xs font-bold text-white">{targetVenueForMap.name}</span></div>
                       <a href={targetVenueForMap.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"><ExternalLink className="w-4 h-4" /></a>
