@@ -221,7 +221,10 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-[100dvh] w-full text-center relative overflow-y-auto bg-black">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <style>{`
+        div::-webkit-scrollbar { display: none; }
+      `}</style>
 
       {/* ── Layered Background ──────────────────────────────── */}
       <div className="absolute inset-0 z-0">
