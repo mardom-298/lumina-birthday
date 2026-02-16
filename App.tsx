@@ -400,6 +400,8 @@ function App() {
     setAppState(AppState.LOCKED);
     window.dispatchEvent(new CustomEvent('bg-music-pause'));
     setBgMusicPlaying(false);
+    setCurrentRsvpData(null);
+    localStorage.removeItem('lumina_rsvp');
   };
 
   const handleRsvpSubmit = async (data: RsvpData) => {
