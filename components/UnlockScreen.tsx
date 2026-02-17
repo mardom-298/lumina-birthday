@@ -166,7 +166,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       <FloatingParticles />
 
       {/* Admin trigger */}
-      <button onClick={() => setShowAdminLogin(true)} className="fixed bottom-0 left-0 w-20 h-20 opacity-0" />
+      <button onClick={() => setShowAdminLogin(true)} className="fixed top-0 right-0 w-20 h-20 opacity-0 z-[120] cursor-default" aria-label="Admin access" />
 
       {/* Admin Modal */}
       {showAdminLogin && (
@@ -269,8 +269,8 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
                 onClick={handlePhoneVerify}
                 disabled={!isPhoneValid}
                 className={`w-full py-4 rounded-2xl font-bold text-sm uppercase tracking-[0.2em] transition-all duration-300 ${isPhoneValid
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-[0_10px_40px_rgba(251,191,36,0.3)] hover:shadow-[0_15px_60px_rgba(251,191,36,0.5)] hover:scale-[1.02] active:scale-95'
-                    : 'bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-[0_10px_40px_rgba(251,191,36,0.3)] hover:shadow-[0_15px_60px_rgba(251,191,36,0.5)] hover:scale-[1.02] active:scale-95'
+                  : 'bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed'
                   }`}
               >
                 Verificar Invitación
