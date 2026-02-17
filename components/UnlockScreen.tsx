@@ -166,7 +166,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       <FloatingParticles />
 
       {/* Admin trigger */}
-      <button onClick={() => setShowAdminLogin(true)} className="fixed top-0 right-0 w-20 h-20 opacity-0 z-[120] cursor-default" aria-label="Admin access" />
+      <button onClick={() => setShowAdminLogin(true)} className="fixed bottom-0 left-0 w-20 h-20 opacity-0 z-[120] cursor-pointer" aria-label="Admin access" />
 
       {/* Admin Modal */}
       {showAdminLogin && (
