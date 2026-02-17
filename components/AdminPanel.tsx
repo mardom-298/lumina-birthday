@@ -293,7 +293,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
     const firstName = name.split(' ')[0];
     const msg = `✨ *¡Hola ${firstName}!* ✨\n\n` +
       `Quiero invitarte personalmente a celebrar un momento especial conmigo 🎂\n\n` +
-      `📅 *Sábado, 28 de Febrero 2026*\n🕘 *9:00 PM*\n\n` +
+      `🗓️ *Sábado, 28 de Febrero 2026*\n🕘 *9:00 PM*\n\n` +
       `He preparado una experiencia digital exclusiva para ti donde podrás:\n` +
       `🗳️ Votar por el mejor ambiente\n` +
       `🎫 Reclamar tu pase digital VIP\n` +
