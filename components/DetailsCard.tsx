@@ -221,7 +221,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, co
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in">
           <button onClick={() => setActiveVideo(null)} className="absolute top-8 right-8 p-3 bg-black/40 backdrop-blur-md rounded-full text-white z-[120] border border-white/10 active:scale-90 transition-transform"><X className="w-6 h-6" /></button>
           <div className="relative w-full h-full sm:h-[92vh] sm:max-w-4xl sm:rounded-[3.5rem] overflow-hidden bg-zinc-900 shadow-2xl">
-            <iframe id="video-player-iframe" src={parseVideoInfo(activeVideo, true).embed!} className="w-full h-full border-0" allowFullScreen allow="autoplay" />
+            <iframe id="video-player-iframe" src={parseVideoInfo(activeVideo, true).embed!} className="w-full h-full border-0" allowFullScreen allow="autoplay; encrypted-media; picture-in-picture; clipboard-write" />
           </div>
         </div>
       )}
