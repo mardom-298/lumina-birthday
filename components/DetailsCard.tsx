@@ -337,6 +337,12 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, co
             )}
           </div>
 
+          {/* Platinum Urgency Banner */}
+          <div className="w-full p-4 rounded-[2rem] bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 border border-amber-500/20 text-center shrink-0 z-20 animate-pulse" style={{ animationDuration: '3s' }}>
+            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">🍸 Los primeros en reclamar <span className="text-amber-300">Pase Platinum</span> reciben 1 trago gratis</p>
+            <p className="text-[8px] text-amber-500/60 mt-1 uppercase tracking-wider">¡Stock limitado — no te quedes sin el tuyo!</p>
+          </div>
+
           {(hasAlreadyVoted && !winningVenue) ? (
             <div className="w-full p-6 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 text-center space-y-4 shrink-0 z-20">
               <div className="flex items-center justify-center gap-2">

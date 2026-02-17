@@ -298,6 +298,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       `🗳️ Votar por el mejor ambiente\n` +
       `🎫 Reclamar tu pase digital VIP\n` +
       `🎵 Elegir la música de la noche\n\n` +
+      `🍸 *Los más rápidos que reclamen su Pase Platinum reciben 1 trago personal gratis — ¡son limitados!*\n\n` +
       `👉 Ingresa aquí con tu número registrado:\n${APP_URL}\n\n` +
       `¡Tu presencia haría esta noche inolvidable! 🥂\n` +
       `— *Marino* 🎉`;
