@@ -390,7 +390,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     minSpend: 'S/ 0',
                     closingTime: '03:00 AM',
                     description: 'Descripción del ambiente',
-                    perks: ['Característica 1'],
+                    perks: [],
                     color: colors[tempVenues.length % colors.length],
                     videoUrl: '',
                     googleMapsUrl: ''

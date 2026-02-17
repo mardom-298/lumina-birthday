@@ -115,19 +115,6 @@ const VenueDetailsModal = ({ venue, onClose }: { venue: VenueOption; onClose: ()
             <p className="text-lg font-bold text-white">{venue.closingTime}</p>
           </div>
         </div>
-
-        {venue.perks && venue.perks.length > 0 && (
-          <div>
-            <h4 className="text-[9px] uppercase tracking-widest text-gray-500 font-black mb-3">Características</h4>
-            <div className="flex flex-wrap gap-2">
-              {venue.perks.map((perk, i) => (
-                <span key={i} className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300 uppercase tracking-wide">
-                  {perk}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="p-6 border-t border-white/5 bg-black/20">
