@@ -287,6 +287,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
   const totalPax = rsvps.reduce((acc, curr) => acc + 1 + curr.guestCount, 0);
 
+  // ── Engagement-based Predictive Analytics ──────────────────
+  const confirmedRsvps = rsvps.filter(r => r.ticketIds && r.ticketIds.length > 0);
+  const votedOnlyRsvps = rsvps.filter(r => r.selectedVenue && (!r.ticketIds || r.ticketIds.length === 0));
+  const registeredOnlyRsvps = rsvps.filter(r => !r.selectedVenue && (!r.ticketIds || r.ticketIds.length === 0));
+
+  // Phone-matched guests who interacted
+  const interactedPhones = new Set(rsvps.map(r => r.phone).filter(Boolean));
+  const noInteractionGuests = guestList.filter(g => !g.used && !interactedPhones.has(g.phone));
+
+  // Pax per category (invitee + their guestCount)
+  const confirmedPax = confirmedRsvps.reduce((a, r) => a + 1 + r.guestCount, 0);
+  const votedOnlyPax = votedOnlyRsvps.reduce((a, r) => a + 1 + r.guestCount, 0);
+  const registeredOnlyPax = registeredOnlyRsvps.reduce((a, r) => a + 1 + r.guestCount, 0);
+  const noInteractionPax = noInteractionGuests.length; // 1 person each assumed
+
+  // Probability weights
+  const PROB_CONFIRMED = 0.95;
+  const PROB_VOTED = 0.60;
+  const PROB_REGISTERED = 0.30;
+  const PROB_NO_INTERACTION = 0.10;
+
+  const estimatedAttendance = Math.round(
+    confirmedPax * PROB_CONFIRMED +
+    votedOnlyPax * PROB_VOTED +
+    registeredOnlyPax * PROB_REGISTERED +
+    noInteractionPax * PROB_NO_INTERACTION
+  );
+
+  const conversionRate = guestList.length > 0
+    ? Math.round((confirmedRsvps.length / guestList.length) * 100)
+    : 0;
+
+  const funnelSteps = [
+    { label: 'Invitados', count: guestList.length, color: 'from-gray-500 to-gray-600', icon: Users },
+    { label: 'Registrados', count: rsvps.length, color: 'from-blue-500 to-blue-600', icon: UserPlus },
+    { label: 'Votaron', count: votedOnlyRsvps.length + confirmedRsvps.length, color: 'from-amber-500 to-yellow-500', icon: PieChart },
+    { label: 'Confirmados', count: confirmedRsvps.length, color: 'from-emerald-500 to-green-500', icon: CheckCircle2 },
+  ];
+  const funnelMax = Math.max(guestList.length, 1);
+
+  // Ticket tier breakdown
+  const tierCounts: Record<string, number> = {};
+  confirmedRsvps.forEach(r => {
+    const tierId = r.selectedTier?.id || 'unknown';
+    tierCounts[tierId] = (tierCounts[tierId] || 0) + (r.ticketIds?.length || 0);
+  });
+
   // Determinar ganador por votos
   const getVenueWithMostVotes = () => {
     if (rsvps.length === 0) return null;
@@ -340,35 +387,182 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-44 no-scrollbar bg-black">
         {activeTab === 'panel' && (
           <div className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5"><Users className="w-5 h-5 text-indigo-400 mb-2 mx-auto" /><p className="text-2xl font-bold font-mono">{rsvps.length}</p><p className="text-[8px] uppercase tracking-widest text-gray-500">Registros</p></div>
-              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5"><UserPlus className="w-5 h-5 text-emerald-400 mb-2 mx-auto" /><p className="text-2xl font-bold font-mono">{totalPax}</p><p className="text-[8px] uppercase tracking-widest text-gray-500">Aforo Total</p></div>
-              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5"><PieChart className="w-5 h-5 text-pink-500 mb-2 mx-auto" /><p className="text-2xl font-bold font-mono">{rsvps.filter(r => r.selectedVenue).length}</p><p className="text-[8px] uppercase tracking-widest text-gray-500">Votos Emitidos</p></div>
-              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5 border-amber-500/20">
+
+            {/* ── Row 1: Main KPIs ─────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5">
+                <Users className="w-5 h-5 text-gray-400 mb-2 mx-auto" />
+                <p className="text-2xl font-bold font-mono">{guestList.length}</p>
+                <p className="text-[8px] uppercase tracking-widest text-gray-500">Invitados Totales</p>
+              </div>
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5">
+                <UserPlus className="w-5 h-5 text-blue-400 mb-2 mx-auto" />
+                <p className="text-2xl font-bold font-mono">{rsvps.length}</p>
+                <p className="text-[8px] uppercase tracking-widest text-gray-500">Registrados</p>
+              </div>
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5">
+                <PieChart className="w-5 h-5 text-amber-400 mb-2 mx-auto" />
+                <p className="text-2xl font-bold font-mono">{votedOnlyRsvps.length + confirmedRsvps.length}</p>
+                <p className="text-[8px] uppercase tracking-widest text-gray-500">Votaron</p>
+              </div>
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5 border-emerald-500/20">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 mb-2 mx-auto" />
+                <p className="text-2xl font-bold font-mono">{confirmedRsvps.length}</p>
+                <p className="text-[8px] uppercase tracking-widest text-gray-500">Confirmados</p>
+              </div>
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+                <Zap className="w-5 h-5 text-amber-500 mb-2 mx-auto" />
+                <p className="text-3xl font-bold font-mono text-amber-400">{estimatedAttendance}</p>
+                <p className="text-[8px] uppercase tracking-widest text-amber-500/70">Aforo Estimado</p>
+              </div>
+              <div className="glass-card p-6 rounded-[2rem] text-center border-white/5">
                 {tempConfig.winningVenueId ? <Trophy className="w-5 h-5 text-amber-500 mb-2 mx-auto" /> : <Clock className="w-5 h-5 text-gray-500 mb-2 mx-auto" />}
                 <p className="text-xs font-bold truncate px-2">{tempConfig.winningVenueId ? venues.find(v => v.id === tempConfig.winningVenueId)?.name : 'Votación Abierta'}</p>
                 <p className="text-[8px] uppercase tracking-widest text-gray-500">Estado del Ambiente</p>
               </div>
             </div>
+
+            {/* ── Row 2: Engagement Funnel ──────────────────────── */}
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-              <h3 className="text-lg font-serif italic mb-6">Tendencia de Votación</h3>
-              <div className="space-y-6">
-                {venues.map(v => {
-                  const votes = rsvps.filter(r => r.selectedVenue?.id === v.id).length;
-                  const pct = rsvps.length > 0 ? (votes / rsvps.length) * 100 : 0;
-                  const isCurrentWinner = winningVenueIdByVotes === v.id;
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-serif italic">Embudo de Engagement</h3>
+                <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Tasa de conversión: <span className="text-emerald-400 text-sm font-mono">{conversionRate}%</span></span>
+              </div>
+              <div className="space-y-4">
+                {funnelSteps.map((step, i) => {
+                  const pct = funnelMax > 0 ? (step.count / funnelMax) * 100 : 0;
+                  const StepIcon = step.icon;
                   return (
-                    <div key={v.id} className="space-y-2">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="flex items-center gap-2">{v.name} {isCurrentWinner && <Trophy className="w-3 h-3 text-amber-500" />}</span>
-                        <span>{votes} votos</span>
+                    <div key={step.label} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="flex items-center gap-2 font-bold"><StepIcon className="w-3.5 h-3.5" /> {step.label}</span>
+                        <span className="font-mono font-bold">{step.count}</span>
                       </div>
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className={`h-full bg-gradient-to-r ${v.color}`} style={{ width: `${pct}%` }}></div></div>
+                      <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${step.color} rounded-full transition-all duration-700`} style={{ width: `${Math.max(pct, 2)}%` }}></div>
+                      </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
+
+            {/* ── Row 3: Two columns ───────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Vote Breakdown */}
+              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+                <h3 className="text-lg font-serif italic mb-6">Tendencia de Votación</h3>
+                <div className="space-y-6">
+                  {venues.map(v => {
+                    const votes = rsvps.filter(r => r.selectedVenue?.id === v.id).length;
+                    const pct = rsvps.length > 0 ? (votes / rsvps.length) * 100 : 0;
+                    const isCurrentWinner = winningVenueIdByVotes === v.id;
+                    return (
+                      <div key={v.id} className="space-y-2">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="flex items-center gap-2">{v.name} {isCurrentWinner && <Trophy className="w-3 h-3 text-amber-500" />}</span>
+                          <span>{votes} votos</span>
+                        </div>
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className={`h-full bg-gradient-to-r ${v.color}`} style={{ width: `${pct}%` }}></div></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Attendance Prediction Breakdown */}
+              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+                <h3 className="text-lg font-serif italic mb-6">Predicción de Asistencia</h3>
+                <div className="space-y-5">
+                  {[
+                    { label: 'Confirmados', emoji: '🎫', count: confirmedPax, prob: PROB_CONFIRMED, estimated: Math.round(confirmedPax * PROB_CONFIRMED), color: 'from-emerald-500 to-green-500', textColor: 'text-emerald-400' },
+                    { label: 'Solo Votaron', emoji: '🗳️', count: votedOnlyPax, prob: PROB_VOTED, estimated: Math.round(votedOnlyPax * PROB_VOTED), color: 'from-amber-500 to-yellow-500', textColor: 'text-amber-400' },
+                    { label: 'Solo Registro', emoji: '👤', count: registeredOnlyPax, prob: PROB_REGISTERED, estimated: Math.round(registeredOnlyPax * PROB_REGISTERED), color: 'from-blue-500 to-indigo-500', textColor: 'text-blue-400' },
+                    { label: 'Sin Interacción', emoji: '👻', count: noInteractionPax, prob: PROB_NO_INTERACTION, estimated: Math.round(noInteractionPax * PROB_NO_INTERACTION), color: 'from-gray-600 to-gray-700', textColor: 'text-gray-400' },
+                  ].map(cat => (
+                    <div key={cat.label} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="flex items-center gap-2 font-bold">{cat.emoji} {cat.label} <span className="text-[8px] text-gray-500 font-normal">({Math.round(cat.prob * 100)}% prob.)</span></span>
+                        <span className="font-mono"><span className={cat.textColor}>{cat.estimated}</span> <span className="text-gray-600">/ {cat.count}</span></span>
+                      </div>
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${cat.color} rounded-full`} style={{ width: `${cat.count > 0 ? (cat.estimated / Math.max(cat.count, 1)) * 100 : 0}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="border-t border-white/10 pt-4 mt-4 flex justify-between items-center">
+                    <span className="text-xs font-bold flex items-center gap-2"><Zap className="w-4 h-4 text-amber-500" /> Total Estimado</span>
+                    <span className="text-xl font-bold font-mono text-amber-400">{estimatedAttendance}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Row 4: Ticket Categories & Unresponsive ──────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Ticket Tier Stats */}
+              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+                <h3 className="text-lg font-serif italic mb-6">Boletos por Categoría</h3>
+                {tempTiers.length > 0 ? (
+                  <div className="space-y-4">
+                    {tempTiers.map((tier: any) => {
+                      const sold = tierCounts[tier.id] || 0;
+                      const totalStock = tier.stock + sold;
+                      const pct = totalStock > 0 ? (sold / totalStock) * 100 : 0;
+                      return (
+                        <div key={tier.id} className="space-y-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold flex items-center gap-2">
+                              {tier.id === 'platinum' && <Crown className="w-3.5 h-3.5 text-purple-400" />}
+                              {tier.id === 'emerald' && <Sparkles className="w-3.5 h-3.5 text-emerald-400" />}
+                              {tier.id === 'standard' && <Ticket className="w-3.5 h-3.5 text-gray-400" />}
+                              {tier.name}
+                            </span>
+                            <span className="font-mono">{sold} <span className="text-gray-500">/ {totalStock}</span></span>
+                          </div>
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" style={{ width: `${pct}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 text-center py-6">No hay categorías configuradas.</p>
+                )}
+              </div>
+
+              {/* Unresponsive Guests */}
+              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-serif italic">Sin Respuesta</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-red-400/70 bg-red-500/10 px-3 py-1.5 rounded-full">{noInteractionGuests.length} pendientes</span>
+                </div>
+                {noInteractionGuests.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                    {noInteractionGuests.slice(0, 15).map((g) => (
+                      <div key={g.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                        <span className="text-xs font-bold truncate flex-1">{g.name}</span>
+                        <a href={`https://wa.me/${g.phone?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    ))}
+                    {noInteractionGuests.length > 15 && (
+                      <p className="text-[9px] text-gray-500 text-center pt-2">y {noInteractionGuests.length - 15} más...</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-3 opacity-50" />
+                    <p className="text-xs text-gray-500">¡Todos tus invitados han interactuado!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         )}
 
