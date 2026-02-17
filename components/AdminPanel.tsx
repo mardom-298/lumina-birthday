@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { VenueOption, EventConfig, RsvpData, GuestEntry } from '../types';
 import {
   BarChart3, Settings, Users, Star, ScanLine, LogOut, CheckCircle2,
-  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette, Ticket, Crown, Sparkles
+  XCircle, Timer, PieChart, UserPlus, Check, X, Clock, MapPin, Wallet, Video, Type, Shield, CalendarDays, Trophy, Zap, Info, Phone, Trash2, RotateCcw, AlertCircle, Plus, Palette, Ticket, Crown, Sparkles, MessageSquare, Send
 } from 'lucide-react';
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from '../src/supabaseClient';
@@ -287,6 +287,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
 
   const totalPax = rsvps.reduce((acc, curr) => acc + 1 + curr.guestCount, 0);
 
+  // ── WhatsApp Invitation Message Builder ─────────────────
+  const APP_URL = 'https://lumina-birthday.vercel.app';
+  const buildWhatsAppUrl = (phone: string, name: string) => {
+    const firstName = name.split(' ')[0];
+    const msg = `✨ *¡Hola ${firstName}!* ✨\n\n` +
+      `Quiero invitarte personalmente a celebrar un momento especial conmigo 🎂\n\n` +
+      `📅 *Sábado, 28 de Febrero 2026*\n🕘 *9:00 PM*\n\n` +
+      `He preparado una experiencia digital exclusiva para ti donde podrás:\n` +
+      `🗳️ Votar por el mejor ambiente\n` +
+      `🎫 Reclamar tu pase digital VIP\n` +
+      `🎵 Elegir la música de la noche\n\n` +
+      `👉 Ingresa aquí con tu número registrado:\n${APP_URL}\n\n` +
+      `¡Tu presencia haría esta noche inolvidable! 🥂\n` +
+      `— *Marino* 🎉`;
+    return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+  };
+
   // ── Engagement-based Predictive Analytics ──────────────────
   const confirmedRsvps = rsvps.filter(r => r.ticketIds && r.ticketIds.length > 0);
   const votedOnlyRsvps = rsvps.filter(r => r.selectedVenue && (!r.ticketIds || r.ticketIds.length === 0));
@@ -545,8 +562,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     {noInteractionGuests.slice(0, 15).map((g) => (
                       <div key={g.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
                         <span className="text-xs font-bold truncate flex-1">{g.name}</span>
-                        <a href={`https://wa.me/${g.phone?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">
-                          <Phone className="w-3.5 h-3.5" />
+                        <a href={buildWhatsAppUrl(g.phone, g.name)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors text-[9px] font-bold">
+                          <Send className="w-3.5 h-3.5" /> Invitar
                         </a>
                       </div>
                     ))}
@@ -744,11 +761,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
             <div className="glass-card rounded-[2rem] overflow-hidden border-white/5 overflow-x-auto">
               <table className="w-full text-left text-xs min-w-[500px]">
                 <thead className="bg-white/5 text-[8px] text-gray-500 font-black uppercase">
-                  <tr><th className="p-5">Nombre</th><th className="p-5">Celular</th><th className="p-5">Estado</th><th className="p-5 text-center">Acciones</th></tr>
+                  <tr><th className="p-5">Nombre</th><th className="p-5">Celular</th><th className="p-5">Estado</th><th className="p-5 text-center">Invitación</th><th className="p-5 text-center">Acciones</th></tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {guestList.length === 0 ? (
-                    <tr><td colSpan={4} className="p-10 text-center text-gray-600 italic">No hay invitados registrados. Agrega tu primer invitado arriba.</td></tr>
+                    <tr><td colSpan={5} className="p-10 text-center text-gray-600 italic">No hay invitados registrados. Agrega tu primer invitado arriba.</td></tr>
                   ) : guestList.map((guest) => (
                     <tr key={guest.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="p-5 font-bold text-white">{guest.name}</td>
@@ -759,6 +776,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                         ) : (
                           <span className="bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-full text-[9px] font-bold inline-flex items-center gap-1.5"><Clock className="w-3 h-3" /> Pendiente</span>
                         )}
+                      </td>
+                      <td className="p-5 text-center">
+                        <a href={buildWhatsAppUrl(guest.phone, guest.name)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all active:scale-95">
+                          <MessageSquare className="w-3 h-3" /> Enviar
+                        </a>
                       </td>
                       <td className="p-5">
                         <div className="flex items-center justify-center gap-2">
