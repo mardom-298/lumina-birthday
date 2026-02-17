@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Lock, X, Key, AlertCircle, Phone, Check, Shield, Star, ChevronRight, Hash, ScanLine } from 'lucide-react';
+import { Lock, X, Key, AlertCircle, Phone, Check, Shield, ChevronRight, Hash } from 'lucide-react';
 import { EventConfig, GuestEntry } from '../types';
 
 interface UnlockScreenProps {
@@ -13,8 +13,8 @@ interface UnlockScreenProps {
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_COOLDOWN = 5 * 60 * 1000;
 
-// ─── Titanium Dust Particle System ───────────────────────────────────
-const ParticleField: React.FC = () => {
+// ─── Minimal Particle Effect ─────────────────────────────────────────
+const TitaniumDust: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -22,7 +22,6 @@ const ParticleField: React.FC = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    let animId: number;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -31,113 +30,58 @@ const ParticleField: React.FC = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    interface Particle {
-      x: number; y: number; vx: number; vy: number;
-      size: number; opacity: number; life: number; maxLife: number;
-    }
-
-    const particles: Particle[] = [];
-    // Fewer, slower, subtler particles (dust motes)
-    for (let i = 0; i < 40; i++) {
+    const particles: Array<{ x: number; y: number; vx: number; vy: number; size: number; opacity: number }> = [];
+    for (let i = 0; i < 30; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.1, // Very slow horizontal drift
-        vy: (Math.random() - 0.5) * 0.1 - 0.05, // Slight upward drift
-        size: Math.random() * 1.5,
-        opacity: Math.random() * 0.3 + 0.05,
-        life: Math.random() * 400,
-        maxLife: 400 + Math.random() * 300,
+        vx: (Math.random() - 0.5) * 0.1,
+        vy: -Math.random() * 0.05,
+        size: Math.random() * 1.2,
+        opacity: Math.random() * 0.2 + 0.05,
       });
     }
 
+    let animId: number;
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach(p => {
         p.x += p.vx;
         p.y += p.vy;
-        p.life++;
-        if (p.life > p.maxLife) {
-          p.x = Math.random() * canvas.width;
-          p.y = canvas.height + 10;
-          p.life = 0;
-        }
+        if (p.y < -10) p.y = canvas.height + 10;
         if (p.x < 0) p.x = canvas.width;
         if (p.x > canvas.width) p.x = 0;
 
-        const fade = p.life < 60 ? p.life / 60 : p.life > p.maxLife - 60 ? (p.maxLife - p.life) / 60 : 1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        // White/Silver dust
-        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * fade})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
         ctx.fill();
       });
       animId = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-[1] pointer-events-none mix-blend-screen" />;
-};
-
-// ─── Geometric Hold Button ──────────────────────────────────────────
-const GeometricHoldBtn: React.FC<{ progress: number; isHolding: boolean; isActive: boolean }> = ({ progress, isHolding, isActive }) => {
-  return (
-    <div className="relative w-24 h-24 flex items-center justify-center">
-      {/* Container rotated 45deg for diamond shape */}
-      <div className={`relative w-16 h-16 transition-all duration-500 ${isHolding ? 'scale-90' : 'scale-100'} ${isActive ? 'rotate-45' : ''}`}>
-
-        {/* Background Border */}
-        <div className={`absolute inset-0 border transition-all duration-500 ${isActive ? 'border-amber-500/30' : 'border-zinc-700'}`} />
-
-        {/* Progress Fill (Clip Path based) */}
-        <div className="absolute inset-0 bg-amber-500 transition-all duration-75 ease-linear"
-          style={{
-            clipPath: `inset(${100 - progress}% 0 0 0)`,
-            opacity: isActive ? 1 : 0
-          }}
-        />
-
-        {/* Inner Content */}
-        <div className={`absolute inset-[2px] bg-black flex items-center justify-center transition-all duration-300 ${isActive ? '-rotate-45' : ''}`}>
-          {isActive ? (
-            <Key className={`w-5 h-5 transition-colors ${progress > 50 ? 'text-amber-500' : 'text-zinc-500'}`} />
-          ) : (
-            <Lock className="w-5 h-5 text-zinc-600" />
-          )}
-        </div>
-      </div>
-
-      {/* Decorative corners for tech feel when active */}
-      {isActive && (
-        <div className="absolute inset-[-4px] pointer-events-none animate-pulse-slow">
-          <div className="absolute top-0 left-1/2 -ml-[1px] w-[2px] h-2 bg-amber-500/50" />
-          <div className="absolute bottom-0 left-1/2 -ml-[1px] w-[2px] h-2 bg-amber-500/50" />
-          <div className="absolute left-0 top-1/2 -mt-[1px] h-[2px] w-2 bg-amber-500/50" />
-          <div className="absolute right-0 top-1/2 -mt-[1px] h-[2px] w-2 bg-amber-500/50" />
-        </div>
-      )}
-    </div>
-  );
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none opacity-40" />;
 };
 
 export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, onAdminEnter, guestList }) => {
   const [isHolding, setIsHolding] = useState(false);
   const [progress, setProgress] = useState(0);
-
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [adminError, setAdminError] = useState(false);
-
   const [phoneInput, setPhoneInput] = useState('');
-  const [verificationState, setVerificationState] = useState<'idle' | 'found' | 'used' | 'not_found'>('idle');
+  const [verificationState, setVerificationState] = useState<'idle' | 'found' | 'not_found'>('idle');
   const [matchedGuest, setMatchedGuest] = useState<GuestEntry | null>(null);
-  const [shakeInput, setShakeInput] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const [scanAnim, setScanAnim] = useState(false);
 
   const isRateLimited = lockedUntil !== null && Date.now() < lockedUntil;
   const isPhoneValid = /^9\d{8}$/.test(phoneInput.trim());
@@ -155,7 +99,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
     return () => clearInterval(interval);
   }, [lockedUntil, isRateLimited]);
 
-  // Hold-to-enter logic
+  // Hold-to-enter
   useEffect(() => {
     let interval: number;
     if (isHolding && !showAdminLogin && isGuestVerified) {
@@ -166,14 +110,9 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
             setTimeout(() => onUnlock(matchedGuest!), 200);
             return 100;
           }
-          // Faster fill for snappier feel
-          return prev + 2.5;
+          return prev + 3;
         });
       }, 16);
-    } else if (!isGuestVerified && isHolding) {
-      setIsHolding(false);
-      setShakeInput(true);
-      setTimeout(() => setShakeInput(false), 600);
     } else {
       setProgress(0);
     }
@@ -191,13 +130,9 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
       const newAttempts = failedAttempts + 1;
       setFailedAttempts(newAttempts);
       if (newAttempts >= RATE_LIMIT_MAX) setLockedUntil(Date.now() + RATE_LIMIT_COOLDOWN);
-      setShakeInput(true);
-      setTimeout(() => setShakeInput(false), 600);
     } else {
       setVerificationState('found');
       setMatchedGuest(found);
-      setScanAnim(true); // Trigger scan animation
-      setTimeout(() => setScanAnim(false), 2000);
     }
   }, [phoneInput, isPhoneValid, isRateLimited, guestList, failedAttempts]);
 
@@ -220,182 +155,182 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[100] bg-[#0a0a0a] overflow-hidden font-sans">
 
-      {/* ── Background: Black Titanium ────────────────────────── */}
-      <div className="absolute inset-0 z-0 bg-zinc-950">
-        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 opacity-80" />
-        {/* Brushed Metal Texture Overlay (CSS Pattern) */}
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 1px, #fff 1px, #fff 2px)' }} />
-        {/* Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
+      {/* Background with texture */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/50 via-black to-zinc-950/80" />
+        <div className="absolute inset-0 opacity-[0.015]"
+          style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0.03) 2px)' }} />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.9)_100%)]" />
       </div>
 
-      <ParticleField />
+      <TitaniumDust />
 
-      {/* ── Scan Line Animation (On Verify) ──────────────────── */}
-      {scanAnim && (
-        <div className="absolute inset-0 z-[10] pointer-events-none">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-400/50 shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-scan-down" />
-          <div className="absolute inset-0 bg-amber-500/5 animate-flash" />
-        </div>
-      )}
+      {/* Admin trigger */}
+      <button onClick={() => setShowAdminLogin(true)} className="fixed top-0 right-0 w-20 h-20 opacity-0" />
 
-      {/* ── Admin Login (Hidden Trigger) ─────────────────────── */}
-      <button onClick={() => setShowAdminLogin(true)} className="fixed top-0 right-0 w-16 h-16 opacity-0 z-[100]" />
-
-      {/* ── Admin Login Modal ────────────────────────────────── */}
+      {/* Admin Modal */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl p-6">
-          <div className="w-full max-w-xs p-8 bg-zinc-900 border border-zinc-800 relative shadow-2xl">
-            <button onClick={() => { setShowAdminLogin(false); setUserInput(''); }} className="absolute top-4 right-4 text-zinc-600 hover:text-white"><X className="w-5 h-5" /></button>
-            <div className="mb-8 text-center">
-              <div className="w-12 h-12 bg-zinc-800 flex items-center justify-center mx-auto mb-4 border border-zinc-700"><Lock className="w-5 h-5 text-amber-500" /></div>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-300">Admin Access</h3>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 p-6">
+          <div className="w-full max-w-xs p-8 bg-zinc-950 border border-zinc-800">
+            <button onClick={() => setShowAdminLogin(false)} className="absolute top-4 right-4 text-zinc-600 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 text-center">
+              <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">ADMIN</h3>
             </div>
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <input type="text" placeholder="USER" value={userInput} onChange={(e) => setUserInput(e.target.value)} className="w-full bg-black border border-zinc-800 p-3 text-xs font-mono text-white outline-none focus:border-amber-500 transition-colors" />
-              <input type="password" placeholder="PASS" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full bg-black border border-zinc-800 p-3 text-xs font-mono text-white outline-none focus:border-amber-500 transition-colors" />
-              {adminError && <div className="text-red-500 text-[10px] font-mono text-center">ACCESS DENIED</div>}
-              <button type="submit" className="w-full bg-zinc-100 text-black font-bold py-3 text-xs tracking-widest hover:bg-amber-400 transition-colors">LOGIN</button>
+            <form onSubmit={handleAdminLogin} className="space-y-3">
+              <input type="text" placeholder="USER" value={userInput} onChange={(e) => setUserInput(e.target.value)}
+                className="w-full bg-black border border-zinc-800 px-3 py-2 text-[11px] font-mono text-white outline-none focus:border-amber-500" />
+              <input type="password" placeholder="PASS" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full bg-black border border-zinc-800 px-3 py-2 text-[11px] font-mono text-white outline-none focus:border-amber-500" />
+              {adminError && <p className="text-red-500 text-[9px] font-mono text-center">ACCESS DENIED</p>}
+              <button type="submit" className="w-full bg-white text-black font-bold py-2 text-[10px] tracking-widest hover:bg-amber-400">ENTER</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ── Main Content Container ───────────────────────────── */}
-      <div className="z-20 w-full max-w-md px-6 flex flex-col items-center justify-between h-[85vh]">
+      {/* Main Content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-between py-16 px-6">
 
-        {/* ── Top: Minimal Branding ──────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 mt-8">
-          <div className="w-[1px] h-12 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
-          <div className="border border-amber-500/30 px-6 py-2 bg-black/50 backdrop-blur-sm">
-            <span className="font-serif italic text-amber-500 text-xl tracking-wider">M · 28</span>
+        {/* Top Branding */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-[1px] h-12 bg-gradient-to-b from-transparent via-amber-500/60 to-transparent" />
+          <div className="border border-amber-500/40 px-8 py-2.5 bg-black/60">
+            <span className="font-serif italic text-amber-500 text-2xl tracking-wide">M · 28</span>
           </div>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Access Control</p>
+          <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-600 font-bold">ACCESS CONTROL</p>
         </div>
 
-        {/* ── Center: Dynamic Content ────────────────────────── */}
-        <div className="w-full flex-1 flex flex-col items-center justify-center space-y-12">
+        {/* Center Content */}
+        <div className="flex flex-col items-center gap-16 w-full max-w-md">
 
-          {/* Status / Date Display */}
-          <div className="text-center space-y-2">
-            {!isGuestVerified ? (
-              <>
-                <h1 className="text-6xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600 scale-y-110">
-                  FEB<span className="text-zinc-600">.</span>28
-                </h1>
-                <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-amber-500/80">
-                  <span>21:00 HRS</span>
-                  <span>•</span>
-                  <span>LIMA, PE</span>
-                </div>
-              </>
-            ) : (
-              <div className="animate-fade-in space-y-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                  <Check className="w-8 h-8 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.3em] text-emerald-500/70 mb-2">Identify Confirmed</p>
-                  <h2 className="text-3xl font-serif italic text-white">{matchedGuest?.name}</h2>
-                </div>
+          {/* Date/Status Display */}
+          {!isGuestVerified ? (
+            <div className="text-center space-y-3">
+              <h1 className="font-black tracking-[-0.05em] leading-none" style={{
+                fontSize: 'clamp(4rem, 15vw, 7rem)',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontStretch: 'ultra-condensed',
+                background: 'linear-gradient(to bottom, #ffffff 0%, #e4e4e7 50%, #71717a 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                transform: 'scaleY(1.1)'
+              }}>
+                FEB<span className="text-zinc-700">.</span>28
+              </h1>
+              <div className="flex items-center justify-center gap-3 text-[10px] font-mono text-amber-500/70 tracking-wider">
+                <span>21:00 HRS</span>
+                <span className="text-zinc-700">•</span>
+                <span>LIMA, PE</span>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center space-y-4 animate-fade-in">
+              <div className="inline-flex items-center justify-center w-14 h-14 border border-emerald-500/40 bg-emerald-500/5">
+                <Check className="w-7 h-7 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[8px] uppercase tracking-[0.3em] text-emerald-500/60 mb-2">IDENTITY CONFIRMED</p>
+                <h2 className="text-3xl font-serif italic text-white">{matchedGuest?.name}</h2>
+              </div>
+            </div>
+          )}
 
           {/* Input Section */}
-          <div className={`w-full max-w-[280px] transition-all duration-300 ${shakeInput ? 'translate-x-[-5px]' : ''}`}>
-
+          <div className="w-full max-w-[320px]">
             {!isGuestVerified ? (
-              <div className="relative group">
-                <div className="absolute left-0 bottom-4 text-zinc-600 group-focus-within:text-amber-500 transition-colors">
-                  <Hash className="w-4 h-4" />
+              <div className="relative">
+                <div className="flex items-center border-b border-zinc-800 pb-3 group focus-within:border-amber-500/50 transition-colors">
+                  <Hash className="w-4 h-4 text-zinc-700 group-focus-within:text-amber-500 mr-3 transition-colors" />
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      setPhoneInput(val);
+                      if (verificationState !== 'idle') setVerificationState('idle');
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePhoneVerify()}
+                    placeholder="CODE / PHONE"
+                    className="flex-1 bg-transparent text-white font-mono text-sm tracking-[0.3em] outline-none placeholder-zinc-800"
+                  />
+                  <button
+                    onClick={handlePhoneVerify}
+                    disabled={!isPhoneValid}
+                    className={`ml-3 transition-all ${isPhoneValid ? 'text-amber-500 hover:text-white' : 'text-zinc-800 cursor-not-allowed'}`}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
-                <input
-                  type="tel"
-                  value={phoneInput}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '').slice(0, 9);
-                    setPhoneInput(val);
-                    if (verificationState === 'not_found' || verificationState === 'used') setVerificationState('idle');
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handlePhoneVerify()}
-                  placeholder="CODE / PHONE"
-                  className="w-full bg-transparent border-b border-zinc-800 py-4 pl-8 pr-12 text-center font-mono text-lg tracking-[0.3em] text-white outline-none focus:border-amber-500/50 transition-all placeholder-zinc-800"
-                />
-                <button
-                  onClick={handlePhoneVerify}
-                  disabled={!isPhoneValid}
-                  className={`absolute right-0 bottom-3 p-2 rounded-full transition-all ${isPhoneValid ? 'text-amber-500 hover:text-white hover:bg-amber-500/20' : 'text-zinc-800 cursor-not-allowed'}`}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
 
-                {/* Error State */}
-                {(verificationState === 'not_found' || verificationState === 'used') && (
-                  <div className="absolute -bottom-8 left-0 right-0 text-center animate-fade-in">
-                    <span className="text-[9px] font-mono text-red-500 uppercase tracking-widest bg-red-500/10 px-2 py-1">
-                      {verificationState === 'used' ? 'Access Already Used' : 'Invalid Credentials'}
-                    </span>
-                  </div>
+                {verificationState === 'not_found' && (
+                  <p className="absolute -bottom-7 left-0 text-[9px] font-mono text-red-500 uppercase tracking-widest">
+                    INVALID CREDENTIALS
+                  </p>
                 )}
               </div>
             ) : (
               <div className="text-center">
-                <button onClick={handleResetVerification} className="text-[9px] font-mono text-zinc-600 hover:text-zinc-400 underline decoration-zinc-800 underline-offset-4 uppercase tracking-widest transition-colors">
-                  Reset Identity
+                <button onClick={handleResetVerification}
+                  className="text-[9px] font-mono text-zinc-700 hover:text-zinc-500 underline decoration-zinc-800 underline-offset-4 uppercase tracking-[0.2em]">
+                  RESET IDENTITY
                 </button>
               </div>
             )}
-
           </div>
 
         </div>
 
-        {/* ── Bottom: Trigger ────────────────────────────────── */}
-        <div className="mb-8 flex flex-col items-center gap-6">
+        {/* Bottom Trigger */}
+        <div className="flex flex-col items-center gap-6">
           <div
-            className="cursor-pointer touch-none select-none active:scale-95 transition-transform"
-            onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} onMouseLeave={() => setIsHolding(false)}
-            onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)}
+            className="relative w-20 h-20 cursor-pointer select-none active:scale-95 transition-transform"
+            onMouseDown={() => isGuestVerified && setIsHolding(true)}
+            onMouseUp={() => setIsHolding(false)}
+            onMouseLeave={() => setIsHolding(false)}
+            onTouchStart={() => isGuestVerified && setIsHolding(true)}
+            onTouchEnd={() => setIsHolding(false)}
           >
-            <GeometricHoldBtn progress={progress} isHolding={isHolding} isActive={isGuestVerified} />
+            {/* Diamond Container */}
+            <div className={`absolute inset-0 rotate-45 border transition-all duration-300 ${isGuestVerified ? 'border-amber-500/40' : 'border-zinc-800'
+              } ${isHolding ? 'scale-90' : 'scale-100'}`}>
+
+              {/* Progress Fill */}
+              <div className="absolute inset-0 bg-amber-500 transition-all duration-75"
+                style={{ clipPath: `inset(${100 - progress}% 0 0 0)` }} />
+
+              {/* Inner Black Square */}
+              <div className="absolute inset-[2px] bg-black flex items-center justify-center -rotate-45">
+                {isGuestVerified ? (
+                  <Key className={`w-6 h-6 transition-colors ${progress > 50 ? 'text-amber-500' : 'text-zinc-600'}`} />
+                ) : (
+                  <Lock className="w-6 h-6 text-zinc-800" />
+                )}
+              </div>
+            </div>
           </div>
 
-          <p className={`text-[9px] uppercase tracking-[0.3em] font-bold transition-all duration-500 ${isHolding ? 'text-amber-500' : isGuestVerified ? 'text-zinc-400 animate-pulse' : 'text-zinc-700'}`}>
-            {isHolding ? 'Authenticating...' : isGuestVerified ? 'Hold to Unlock' : 'Enter Credentials'}
+          <p className={`text-[9px] uppercase tracking-[0.3em] font-bold transition-colors ${isHolding ? 'text-amber-500' : isGuestVerified ? 'text-zinc-500 animate-pulse' : 'text-zinc-800'
+            }`}>
+            {isHolding ? 'AUTHENTICATING...' : isGuestVerified ? 'HOLD TO UNLOCK' : 'ENTER CREDENTIALS'}
           </p>
         </div>
 
       </div>
 
-      {/* ── Global Styles ────────────────────────────────────── */}
+      {/* Animations */}
       <style>{`
-        @keyframes scan-down {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-scan-down { animation: scan-down 1.5s ease-in-out infinite; }
-        
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.8; }
-        }
-        .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
-
-        @keyframes flash {
-            0%, 100% { opacity: 0; }
-            10%, 30% { opacity: 0.1; }
-            20%, 40% { opacity: 0; }
-        }
-        .animate-flash { animation: flash 0.5s ease-out; }
-        
-        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out; }
       `}</style>
     </div>
   );
