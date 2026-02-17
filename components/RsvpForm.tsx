@@ -377,12 +377,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
                 <Trophy className="w-6 h-6 text-amber-500 mx-auto mb-3" />
                 <span className="font-bold text-2xl text-white block">{winningVenue.name}</span>
                 <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mt-2">{winningVenue.vibe}</p>
-                <p className="text-xs text-gray-400 mt-4 leading-relaxed">{winningVenue.description}</p>
-                <div className="flex gap-4 justify-center mt-6">
-                  {winningVenue.perks?.map((perk, i) => (
-                    <span key={i} className="text-[8px] bg-amber-500/10 border border-amber-500/20 text-amber-500 px-3 py-1.5 rounded-full font-black uppercase tracking-widest">{perk}</span>
-                  ))}
-                </div>
               </div>
             ) : (
               <div className="p-10 rounded-[2.5rem] border border-white/10 bg-white/5 w-full max-w-sm">
