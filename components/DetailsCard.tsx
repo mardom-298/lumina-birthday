@@ -9,6 +9,7 @@ interface DetailsCardProps {
   config: EventConfig;
   venues: VenueOption[];
   hasAlreadyVoted?: boolean;
+  guestName?: string;
 }
 
 const PLAYLIST_TRACKS = [
@@ -138,7 +139,7 @@ const VenueDetailsModal = ({ venue, onClose }: { venue: VenueOption; onClose: ()
   </div>
 );
 
-export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, config, venues, hasAlreadyVoted = false }) => {
+export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, config, venues, hasAlreadyVoted, guestName }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'vibes' | 'music'>('info');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(PLAYLIST_TRACKS[0].id);
   const isVotingClosed = config.votingDeadline ? new Date(config.votingDeadline).getTime() < Date.now() : false;
@@ -245,7 +246,7 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, co
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent md:bg-gradient-to-r md:from-transparent md:to-zinc-900/80"></div>
           <div className="z-10 text-center px-6 md:text-left md:p-10 md:flex md:flex-col md:justify-end md:h-full md:items-start md:w-full">
             <div className="inline-block px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black tracking-[0.3em] text-amber-500 mb-3 uppercase">{winningVenue ? 'Ambiente Confirmado' : 'Evento Exclusivo'}</div>
-            <h2 className="text-4xl sm:text-5xl font-serif italic text-white drop-shadow-2xl">Marino <span className="text-amber-400">28</span></h2>
+            <h2 className="text-4xl sm:text-5xl font-serif italic text-white drop-shadow-2xl">Bienvenido <span className="text-amber-400">{guestName ? guestName.split(' ')[0] : 'Invitado'}</span></h2>
           </div>
         </div>
 
