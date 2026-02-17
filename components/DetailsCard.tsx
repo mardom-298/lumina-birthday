@@ -269,9 +269,9 @@ export const DetailsCard: React.FC<DetailsCardProps> = ({ onContinue, onExit, co
                     </p>
                   </div>
                   {!winningVenue && (
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 px-1">
+                    <div className="grid grid-cols-3 gap-2 w-full mb-4">
                       {venues.map((v) => (
-                        <button key={v.id} onClick={() => setPreviewVenue(v)} className={`shrink-0 px-4 py-2.5 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all duration-300 ${targetVenueForMap.id === v.id ? `bg-gradient-to-r ${v.color} border-transparent text-white shadow-lg scale-105` : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'}`}>{v.name}</button>
+                        <button key={v.id} onClick={() => setPreviewVenue(v)} className={`px-2 py-3 rounded-xl border text-[8px] font-black uppercase tracking-widest transition-all duration-300 w-full truncate ${targetVenueForMap.id === v.id ? `bg-gradient-to-r ${v.color} border-transparent text-white shadow-lg` : 'bg-white/5 border-white/5 text-gray-500 hover:text-white hover:bg-white/10'}`}>{v.name}</button>
                       ))}
                     </div>
                   )}

@@ -289,7 +289,7 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
         <div className="flex items-center gap-2">
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-r from-transparent to-amber-500/70"></div>
           <Sparkles className="w-3 h-3 text-amber-400" />
-          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-amber-400">MARINO'S GOLDEN 28</span>
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-amber-400">Fiesta de Marino</span>
           <Sparkles className="w-3 h-3 text-amber-400" />
           <div className="h-[1px] w-6 sm:w-12 bg-gradient-to-l from-transparent to-amber-500/70"></div>
         </div>
