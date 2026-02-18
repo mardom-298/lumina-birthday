@@ -447,6 +447,20 @@ function App() {
   };
 
   const handleRsvpSubmit = async (data: RsvpData) => {
+    // Prevent duplicate submission check (client-side)
+    if (!data.id) {
+      const phone = currentGuest?.phone || data.phone;
+      if (phone) {
+        const existing = allRsvps.find(r => r.phone === phone);
+        if (existing) {
+          console.warn("Duplicate RSVP submission prevented for phone:", phone);
+          setCurrentRsvpData(existing);
+          setAppState(AppState.SUCCESS);
+          return;
+        }
+      }
+    }
+
     setCurrentRsvpData(data);
     const updatedRsvps = [...allRsvps, data];
     setAllRsvps(updatedRsvps);

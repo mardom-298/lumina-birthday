@@ -83,3 +83,7 @@ create table ticket_scans (
 
 -- Enable Realtime (so Admin Panel updates instantly)
 alter publication supabase_realtime add table config, guests, rsvps, ticket_tiers, ticket_scans;
+
+-- 6. DATA INTEGRITY (Added to prevent duplicate RSVPs)
+-- Run this in Supabase SQL Editor to fix the double-voting issue:
+-- alter table rsvps add constraint rsvps_phone_key unique (phone);
