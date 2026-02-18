@@ -90,5 +90,17 @@ create table ticket_scans (
 alter publication supabase_realtime add table config, guests, rsvps, ticket_tiers, ticket_scans;
 
 -- 6. DATA INTEGRITY (Added to prevent duplicate RSVPs)
--- Run this in Supabase SQL Editor to fix the double-voting issue:
--- alter table rsvps add constraint rsvps_phone_key unique (phone);
+-- 6.1 First, delete any existing duplicates (keeping the latest one)
+delete from rsvps
+where id in (
+  select id
+  from (
+    select id,
+           row_number() over (partition by phone order by created_at desc) as rn
+    from rsvps
+  ) t
+  where t.rn > 1
+);
+
+-- 6.2 Then, apply the unique constraint
+alter table rsvps add constraint rsvps_phone_key unique (phone);
