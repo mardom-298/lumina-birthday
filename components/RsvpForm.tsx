@@ -16,7 +16,7 @@ interface RsvpFormProps {
 }
 
 export const INITIAL_TIERS: TicketTier[] = [
-  { id: 'platinum', name: 'PLATINUM VIP', description: 'Acceso total + Barra Libre', stock: 5, color: 'text-amber-400', gradient: 'from-amber-400/20 to-amber-900/40', border: 'border-amber-400/30', perks: ['🍸 1 Trago Personal Gratis', 'Barra Libre', 'Zona VIP', 'Meet & Greet'] },
+  { id: 'platinum', name: 'PLATINUM VIP', description: 'Acceso total + Barra Libre', stock: 4, color: 'text-amber-400', gradient: 'from-amber-400/20 to-amber-900/40', border: 'border-amber-400/30', perks: ['🍸 1 Trago Personal Gratis', 'Barra Libre', 'Zona VIP', 'Meet & Greet'] },
   { id: 'emerald', name: 'EMERALD GUEST', description: 'Acceso Preferencial', stock: 12, color: 'text-emerald-400', gradient: 'from-emerald-400/20 to-emerald-900/40', border: 'border-emerald-400/30', perks: ['Zona Preferencial', 'Welcome Drink'] },
   { id: 'standard', name: 'STANDARD ECHO', description: 'Acceso General', stock: 25, color: 'text-gray-400', gradient: 'from-gray-600/20 to-gray-900/40', border: 'border-white/10', perks: ['Acceso General'] }
 ];

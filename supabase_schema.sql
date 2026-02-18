@@ -47,14 +47,19 @@ create table ticket_tiers (
 );
 
 -- Insert default tiers
+-- Insert default tiers
 insert into ticket_tiers (id, name, description, stock, color, gradient, border, perks) values
-  ('platinum', 'PLATINUM VIP', 'Acceso total + Barra Libre', 5, 'text-amber-400', 'from-amber-400/20 to-amber-900/40', 'border-amber-400/30', ARRAY['Barra Libre', 'Zona VIP', 'Meet & Greet']),
+  ('platinum', 'PLATINUM VIP', 'Acceso total + Barra Libre', 4, 'text-amber-400', 'from-amber-400/20 to-amber-900/40', 'border-amber-400/30', ARRAY['Barra Libre', 'Zona VIP', 'Meet & Greet']),
   ('emerald', 'EMERALD GUEST', 'Acceso Preferencial', 12, 'text-emerald-400', 'from-emerald-400/20 to-emerald-900/40', 'border-emerald-400/30', ARRAY['Zona Preferencial', 'Welcome Drink']),
   ('standard', 'STANDARD ECHO', 'Acceso General', 25, 'text-gray-400', 'from-gray-600/20 to-gray-900/40', 'border-white/10', ARRAY['Acceso General']);
 
 -- Atomic stock decrement function (prevents double-claiming)
 create or replace function claim_ticket(tier_id text)
-returns int as $$
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   remaining int;
 begin
@@ -69,7 +74,7 @@ begin
 
   return remaining;
 end;
-$$ language plpgsql;
+$$;
 
 -- 5. TICKET SCANS (Tracks scanned/used tickets at the door)
 create table ticket_scans (
