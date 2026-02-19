@@ -808,12 +808,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 <div className="glass-card rounded-[2rem] overflow-hidden border-white/5 overflow-x-auto">
                   <table className="w-full text-left text-xs min-w-[600px]">
                     <thead className="bg-white/5 text-[8px] text-gray-500 font-black uppercase">
-                      <tr><th className="p-5">Nombre</th><th className="p-5">Voto</th><th className="p-5">Acompañantes</th><th className="p-5">Canción</th></tr>
+                      <tr><th className="p-5">Nombre</th><th className="p-5">Boleto</th><th className="p-5">Voto</th><th className="p-5">Acompañantes</th><th className="p-5">Canción</th></tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {rsvps.map((r, i) => (
                         <tr key={i}>
                           <td className="p-5"><div className="font-bold">{r.firstName} {r.lastName}</div><div className="opacity-40">{r.email}</div></td>
+                          <td className="p-5">
+                            {r.selectedTier ? (
+                              <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${r.selectedTier.id === 'platinum' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/5 text-gray-400'}`}>
+                                {r.selectedTier.name}
+                              </span>
+                            ) : (
+                              <span className="opacity-20 text-[9px] font-bold">-</span>
+                            )}
+                          </td>
                           <td className="p-5"><span className="bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-md text-[9px] font-bold">{r.selectedVenue?.name || 'Pendiente'}</span></td>
                           <td className="p-5"><span className="bg-white/5 px-3 py-1 rounded-full font-bold">+{r.guestCount}</span></td>
                           <td className="p-5 italic opacity-60">"{r.songRequest || '-'}"</td>
