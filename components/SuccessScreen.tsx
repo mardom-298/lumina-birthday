@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { RsvpData, GeneratedPersona, EventConfig, TicketTier } from '../types';
+import { RsvpData, GeneratedPersona, EventConfig, TicketTier, VenueOption } from '../types';
 import { generatePartyPersona } from '../services/geminiService';
 import { Share2, Download, Sparkles, Wifi, Music, MapPin, MessageCircle, CheckCircle2, Crown, Zap, LogOut } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -10,6 +10,7 @@ import QRCode from 'qrcode';
 interface SuccessScreenProps {
     data: RsvpData;
     config: EventConfig;
+    venues?: VenueOption[];
     onExit?: () => void;
 }
 
@@ -148,7 +149,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
     );
 };
 
-export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onExit }) => {
+export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, venues, onExit }) => {
     const [persona, setPersona] = useState<GeneratedPersona | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -228,9 +229,14 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onEx
         }
     };
 
+    // Determine actual venue (use winner if voting closed, else use selected)
+    const actualVenue = (config.winningVenueId && venues)
+        ? (venues.find(v => v.id === config.winningVenueId) || data.selectedVenue)
+        : data.selectedVenue;
+
     const handleWhatsApp = () => {
         const tierName = data.selectedTier?.name || "General";
-        const venueName = data.selectedVenue?.name || "Evento";
+        const venueName = actualVenue?.name || "Evento";
         const totalGuests = 1 + data.guestCount;
 
         const message = `¡Hola! Soy ${data.firstName} ${data.lastName}. Ya tengo mis entradas confirmadas para ${venueName}.\n\n🎫 Mi Boleto: ${tierName}\n👥 Total Personas: ${totalGuests}\n\n¡Nos vemos ahí! 🥂`;
@@ -319,7 +325,11 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ data, config, onEx
                         </button>
 
                         <button
-                            onClick={() => window.open(data.selectedVenue?.googleMapsUrl || `https://www.google.com/maps?q=${encodeURIComponent(data.selectedVenue?.name || '')}`, '_blank')}
+                            onClick={() => {
+                                const searchQuery = actualVenue?.mapQuery || (actualVenue?.name ? actualVenue.name + " Lima" : "");
+                                const mapUrl = actualVenue?.googleMapsUrl || `https://www.google.com/maps?q=${encodeURIComponent(searchQuery)}`;
+                                window.open(mapUrl, '_blank');
+                            }}
                             className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-white/10"
                         >
                             <MapPin className="w-4 h-4" />

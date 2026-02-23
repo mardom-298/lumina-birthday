@@ -545,7 +545,7 @@ function App() {
         )}
 
         {appState === AppState.SUCCESS && currentRsvpData && (
-          <SuccessScreen data={currentRsvpData} config={config} onExit={handleExit} />
+          <SuccessScreen data={currentRsvpData} config={config} venues={venues} onExit={handleExit} />
         )}
 
         {appState === AppState.ADMIN && (
