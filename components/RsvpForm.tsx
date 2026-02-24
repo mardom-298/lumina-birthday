@@ -412,7 +412,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
               </div>
             )}
             <div className="space-y-4 max-w-xl mx-auto">
-              {tiers.filter(t => t.id !== 'host' || guestPhone === config.adminUser).map(tier => {
+              {tiers.filter(t => t.id !== 'host' || guestPhone === '994126635').map(tier => {
                 const isAgotado = tier.stock <= 0;
                 const isSelected = formData.selectedTier?.id === tier.id;
                 return (
