@@ -45,6 +45,7 @@ export interface EventConfig {
   votingDeadline?: string;
   winningVenueId?: string | null;
   maxCapacity?: number;
+  hostPhone?: string;
 }
 
 export interface RsvpData {

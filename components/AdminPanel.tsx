@@ -785,7 +785,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     <tr><td colSpan={5} className="p-10 text-center text-gray-600 italic">No hay invitados registrados. Agrega tu primer invitado arriba.</td></tr>
                   ) : guestList.map((guest) => (
                     <tr key={guest.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="p-5 font-bold text-white">{guest.name}</td>
+                      <td className="p-5 font-bold text-white">
+                        <span className="flex items-center gap-2">
+                          {guest.name}
+                          {tempConfig.hostPhone === guest.phone && <Crown className="w-3.5 h-3.5 text-yellow-400" />}
+                        </span>
+                      </td>
                       <td className="p-5 font-mono text-gray-400">{guest.phone}</td>
                       <td className="p-5">
                         {guest.used ? (
@@ -801,6 +806,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                       </td>
                       <td className="p-5">
                         <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              const isHost = tempConfig.hostPhone === guest.phone;
+                              const newConfig = { ...tempConfig, hostPhone: isHost ? undefined : guest.phone };
+                              setTempConfig(newConfig);
+                              onUpdateConfig(newConfig);
+                            }}
+                            className={`p-2 rounded-lg transition-all ${tempConfig.hostPhone === guest.phone ? 'bg-yellow-500/20 text-yellow-400' : 'hover:bg-white/5 text-gray-500 hover:text-yellow-400'}`}
+                            title={tempConfig.hostPhone === guest.phone ? 'Quitar rol de Host' : 'Asignar como Host (cumpleañero)'}
+                          >
+                            <Crown className="w-3.5 h-3.5" />
+                          </button>
                           {guest.used && (
                             <button onClick={() => onUpdateGuests(guestList.map(g => g.id === guest.id ? { ...g, used: false, usedAt: undefined } : g))} className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-amber-500 transition-all" title="Restaurar acceso">
                               <RotateCcw className="w-3.5 h-3.5" />
