@@ -316,7 +316,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       `👉 Ingresa aquí con tu número registrado:\n${APP_URL}\n\n` +
       `¡Tu presencia haría esta noche inolvidable! 🥂\n` +
       `— *Marino* 🎉`;
-    return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fullPhone = cleanPhone.length === 9 ? `51${cleanPhone}` : cleanPhone;
+    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
   };
 
   // ── Engagement-based Predictive Analytics ──────────────────
