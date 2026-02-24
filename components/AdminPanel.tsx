@@ -975,6 +975,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                     </div>
                   ))}
                 </div>
+                {!isSupervisor && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm('¿Borrar TODOS los registros de escaneo? Esta acción no se puede deshacer.')) return;
+                      try {
+                        const { data: allScans } = await supabase.from('ticket_scans').select('id');
+                        if (allScans && allScans.length > 0) {
+                          for (const scan of allScans) {
+                            await supabase.from('ticket_scans').delete().eq('id', scan.id);
+                          }
+                        }
+                        setScanHistory([]);
+                      } catch (e) {
+                        console.error('Error clearing scans:', e);
+                      }
+                    }}
+                    className="w-full mt-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 inline mr-2" />
+                    Limpiar Registros
+                  </button>
+                )}
               </div>
             )}
           </div>
