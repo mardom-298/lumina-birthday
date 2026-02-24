@@ -61,6 +61,8 @@ const DEFAULT_CONFIG: EventConfig = {
   locationPlaceholder: "Ubicación por Confirmar",
   adminUser: "71267719",
   adminPassword: "S0p0rt3#",
+  supervisorUser: "supervisor",
+  supervisorPassword: "Scan2026",
   guestPasscode: "2026",
   votingDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   winningVenueId: null,
@@ -212,6 +214,7 @@ const GlobalAudioPlayer = () => {
 
 function App() {
   const [appState, setAppState] = useState<AppState>(AppState.LOCKED);
+  const [adminRole, setAdminRole] = useState<'admin' | 'supervisor'>('admin');
   const [currentRsvpData, setCurrentRsvpData] = useState<RsvpData | null>(null);
   const [currentGuest, setCurrentGuest] = useState<GuestEntry | null>(null); // Track logged in guest
   const [bgMusicPlaying, setBgMusicPlaying] = useState(false);
@@ -435,7 +438,7 @@ function App() {
     }
   };
 
-  const handleAdminEnter = () => setAppState(AppState.ADMIN);
+  const handleAdminEnter = (role: 'admin' | 'supervisor' = 'admin') => { setAdminRole(role); setAppState(AppState.ADMIN); };
   const startRsvp = () => setAppState(AppState.RSVP);
   const handleBackToDetails = () => setAppState(AppState.INVITATION);
   const handleExit = () => {
@@ -549,7 +552,7 @@ function App() {
         )}
 
         {appState === AppState.ADMIN && (
-          <AdminPanel config={config} venues={venues} rsvps={allRsvps} onUpdateConfig={updateConfig} onUpdateVenues={updateVenues} onExit={() => setAppState(AppState.LOCKED)} guestList={guestList} onUpdateGuests={updateGuestList} />
+          <AdminPanel config={config} venues={venues} rsvps={allRsvps} onUpdateConfig={updateConfig} onUpdateVenues={updateVenues} onExit={() => setAppState(AppState.LOCKED)} guestList={guestList} onUpdateGuests={updateGuestList} role={adminRole} />
         )}
       </div>
 

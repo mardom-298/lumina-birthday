@@ -17,10 +17,13 @@ interface AdminPanelProps {
   onExit: () => void;
   guestList: GuestEntry[];
   onUpdateGuests: (newList: GuestEntry[]) => void;
+  role?: 'admin' | 'supervisor';
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, onUpdateConfig, onUpdateVenues, onExit, guestList, onUpdateGuests }) => {
-  const [activeTab, setActiveTab] = useState<'panel' | 'sedes' | 'invitados' | 'scan' | 'ajustes' | 'entradas'>('panel');
+export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, onUpdateConfig, onUpdateVenues, onExit, guestList, onUpdateGuests, role = 'admin' }) => {
+  const isSupervisor = role === 'supervisor';
+  const [activeTab, setActiveTab] = useState<'panel' | 'sedes' | 'invitados' | 'scan' | 'ajustes' | 'entradas'>(isSupervisor ? 'scan' : 'panel');
+  const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [tempConfig, setTempConfig] = useState<EventConfig>(config);
   const [tempVenues, setTempVenues] = useState<VenueOption[]>(venues);
   const [tempTiers, setTempTiers] = useState<any[]>([]); // To store tiers for editing
@@ -36,6 +39,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       if (data) setTempTiers(data);
     };
     fetchTiers();
+
+    // Fetch scan history
+    const fetchScanHistory = async () => {
+      const { data } = await supabase.from('ticket_scans').select('*').order('scanned_at', { ascending: false });
+      if (data) setScanHistory(data);
+    };
+    fetchScanHistory();
   }, []);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -91,6 +101,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
         guest_email: found.email,
         tier_name: found.selectedTier?.name || 'N/A'
       });
+
+      // Refresh scan history
+      const { data: updatedScans } = await supabase.from('ticket_scans').select('*').order('scanned_at', { ascending: false });
+      if (updatedScans) setScanHistory(updatedScans);
 
       setScanResult({ valid: true, data: found, message: "✓ Acceso Permitido" });
     } catch (err) {
@@ -388,14 +402,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-black text-white fixed inset-0 z-[200]">
       <aside className="hidden md:flex w-64 border-r border-white/5 flex-col p-6 space-y-8 bg-zinc-900/50">
-        <div><h1 className="text-xl font-serif italic">Lumina Admin</h1><p className="text-[8px] text-gray-500 uppercase font-black">Control de Acceso</p></div>
+        <div><h1 className="text-xl font-serif italic">{isSupervisor ? 'Supervisor' : 'Lumina Admin'}</h1><p className="text-[8px] text-gray-500 uppercase font-black">Control de Acceso</p></div>
         <nav className="flex-1 space-y-2">
-          <NavItem icon={BarChart3} label="Panel Principal" tab="panel" />
+          {!isSupervisor && <NavItem icon={BarChart3} label="Panel Principal" tab="panel" />}
           <NavItem icon={ScanLine} label="Escanear QR" tab="scan" />
-          <NavItem icon={Users} label="Invitados" tab="invitados" />
-          <NavItem icon={Star} label="Editar Ambientes" tab="sedes" />
-          <NavItem icon={Ticket} label="Entradas" tab="entradas" />
-          <NavItem icon={Settings} label="Ajustes" tab="ajustes" />
+          {!isSupervisor && <NavItem icon={Users} label="Invitados" tab="invitados" />}
+          {!isSupervisor && <NavItem icon={Star} label="Editar Ambientes" tab="sedes" />}
+          {!isSupervisor && <NavItem icon={Ticket} label="Entradas" tab="entradas" />}
+          {!isSupervisor && <NavItem icon={Settings} label="Ajustes" tab="ajustes" />}
         </nav>
         <button onClick={onExit} className="w-full p-4 rounded-xl border border-white/10 text-gray-400 hover:text-white flex items-center justify-center gap-2 font-black text-[10px] uppercase transition-colors hover:bg-red-500/10 hover:text-red-500">
           <LogOut className="w-4 h-4" /> Salir
@@ -940,6 +954,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                 <button onClick={() => { setScanResult(null); setCameraError(null); }} className="mt-6 px-8 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Escanear Otro</button>
               </div>
             )}
+
+            {/* ── Scan History ─────────────────────────────────── */}
+            {scanHistory.length > 0 && (
+              <div className="glass-card p-6 rounded-[2rem] border-white/5 w-full max-w-sm mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Historial de Ingresos</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400/70 bg-emerald-500/10 px-3 py-1 rounded-full">{scanHistory.length} escaneados</span>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+                  {scanHistory.map((scan: any, i: number) => (
+                    <div key={scan.id || i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{scan.guest_name}</p>
+                        <p className="text-[9px] text-gray-500">{scan.tier_name}</p>
+                      </div>
+                      <span className="text-[9px] text-gray-400 font-mono shrink-0 ml-2">
+                        {new Date(scan.scanned_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1193,12 +1230,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[5.5rem] bg-zinc-900 border-t border-white/5 flex items-center justify-around z-[210] px-4">
-        <button onClick={() => setActiveTab('panel')} className={activeTab === 'panel' ? 'text-white' : 'text-gray-500'}><BarChart3 className="w-5 h-5" /></button>
+        {!isSupervisor && <button onClick={() => setActiveTab('panel')} className={activeTab === 'panel' ? 'text-white' : 'text-gray-500'}><BarChart3 className="w-5 h-5" /></button>}
         <button onClick={() => setActiveTab('scan')} className={activeTab === 'scan' ? 'text-white' : 'text-gray-500'}><ScanLine className="w-5 h-5" /></button>
-        <button onClick={() => setActiveTab('invitados')} className={activeTab === 'invitados' ? 'text-white' : 'text-gray-500'}><Users className="w-5 h-5" /></button>
-        <button onClick={() => setActiveTab('sedes')} className={activeTab === 'sedes' ? 'text-white' : 'text-gray-500'}><Star className="w-5 h-5" /></button>
-        <button onClick={() => setActiveTab('entradas')} className={activeTab === 'entradas' ? 'text-white' : 'text-gray-500'}><Ticket className="w-5 h-5" /></button>
-        <button onClick={() => setActiveTab('ajustes')} className={activeTab === 'ajustes' ? 'text-white' : 'text-gray-500'}><Settings className="w-5 h-5" /></button>
+        {!isSupervisor && <button onClick={() => setActiveTab('invitados')} className={activeTab === 'invitados' ? 'text-white' : 'text-gray-500'}><Users className="w-5 h-5" /></button>}
+        {!isSupervisor && <button onClick={() => setActiveTab('sedes')} className={activeTab === 'sedes' ? 'text-white' : 'text-gray-500'}><Star className="w-5 h-5" /></button>}
+        {!isSupervisor && <button onClick={() => setActiveTab('entradas')} className={activeTab === 'entradas' ? 'text-white' : 'text-gray-500'}><Ticket className="w-5 h-5" /></button>}
+        {!isSupervisor && <button onClick={() => setActiveTab('ajustes')} className={activeTab === 'ajustes' ? 'text-white' : 'text-gray-500'}><Settings className="w-5 h-5" /></button>}
         <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
         <button onClick={onExit} className="text-red-500/70 hover:text-red-500 transition-colors"><LogOut className="w-5 h-5" /></button>
       </nav>

@@ -6,7 +6,7 @@ import { EventConfig, GuestEntry } from '../types';
 interface UnlockScreenProps {
   onUnlock: (guest: GuestEntry) => void;
   config: EventConfig;
-  onAdminEnter: () => void;
+  onAdminEnter: (role: 'admin' | 'supervisor') => void;
   guestList: GuestEntry[];
 }
 
@@ -144,8 +144,13 @@ export const UnlockScreen: React.FC<UnlockScreenProps> = ({ onUnlock, config, on
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (userInput === config.adminUser && passwordInput === config.adminPassword) onAdminEnter();
-    else { setAdminError(true); setTimeout(() => setAdminError(false), 3000); }
+    if (userInput === config.adminUser && passwordInput === config.adminPassword) {
+      onAdminEnter('admin');
+    } else if (userInput === config.supervisorUser && passwordInput === config.supervisorPassword) {
+      onAdminEnter('supervisor');
+    } else {
+      setAdminError(true); setTimeout(() => setAdminError(false), 3000);
+    }
   };
 
   const getRemainingLockTime = () => {

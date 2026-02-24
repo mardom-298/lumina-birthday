@@ -39,6 +39,8 @@ export interface EventConfig {
   locationPlaceholder: string;
   adminUser?: string;
   adminPassword?: string;
+  supervisorUser?: string;
+  supervisorPassword?: string;
   guestPasscode?: string;
   votingDeadline?: string;
   winningVenueId?: string | null;
