@@ -806,7 +806,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ config, venues, rsvps, o
                               <RotateCcw className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <button onClick={() => { if (confirm(`¿Eliminar a ${guest.name}?`)) onUpdateGuests(guestList.filter(g => g.id !== guest.id)); }} className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-500 transition-all" title="Eliminar invitado">
+                          <button onClick={async () => {
+                            if (!confirm(`¿Eliminar a ${guest.name} y TODOS sus registros (boletos, votos, escaneos)?`)) return;
+                            try {
+                              // 1. Find and delete RSVP by phone
+                              const { data: rsvpRows } = await supabase.from('rsvps').select('id, ticket_ids, selected_tier_id').eq('phone', guest.phone);
+                              if (rsvpRows && rsvpRows.length > 0) {
+                                for (const rsvp of rsvpRows) {
+                                  // 2. Delete associated ticket scans
+                                  if (rsvp.ticket_ids && rsvp.ticket_ids.length > 0) {
+                                    for (const tid of rsvp.ticket_ids) {
+                                      await supabase.from('ticket_scans').delete().eq('ticket_id', tid);
+                                    }
+                                  }
+                                  // 3. Restore tier stock
+                                  if (rsvp.selected_tier_id) {
+                                    const { data: tierData } = await supabase.from('ticket_tiers').select('stock').eq('id', rsvp.selected_tier_id).single();
+                                    if (tierData) {
+                                      await supabase.from('ticket_tiers').update({ stock: tierData.stock + 1 }).eq('id', rsvp.selected_tier_id);
+                                    }
+                                  }
+                                  // 4. Delete RSVP
+                                  await supabase.from('rsvps').delete().eq('id', rsvp.id);
+                                }
+                              }
+                            } catch (e) {
+                              console.error('Error cleaning guest data:', e);
+                            }
+                            // 5. Remove from guest list
+                            onUpdateGuests(guestList.filter(g => g.id !== guest.id));
+                          }} className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-500 transition-all" title="Eliminar invitado y sus registros">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
