@@ -544,6 +544,7 @@ function App() {
             existingRsvpsCount={allRsvps.length}
             isVotingClosed={isVotingClosed}
             initialData={currentRsvpData || undefined}
+            guestPhone={currentGuest?.phone}
           />
         )}
 

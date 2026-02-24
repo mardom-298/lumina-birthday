@@ -49,6 +49,7 @@ create table ticket_tiers (
 -- Insert default tiers
 -- Insert default tiers
 insert into ticket_tiers (id, name, description, stock, color, gradient, border, perks) values
+  ('host', 'THE HOST 👑', 'El Anfitrión — Exclusivo', 1, 'text-yellow-300', 'from-yellow-400/30 to-amber-900/50', 'border-yellow-400/50', ARRAY['👑 Es Mi Fiesta', '🍾 Barra Libre Total', '⚡ Acceso Total', '🎶 DJ Dedicado']),
   ('platinum', 'PLATINUM VIP', 'Acceso total + Barra Libre', 4, 'text-amber-400', 'from-amber-400/20 to-amber-900/40', 'border-amber-400/30', ARRAY['Barra Libre', 'Zona VIP', 'Meet & Greet']),
   ('emerald', 'EMERALD GUEST', 'Acceso Preferencial', 12, 'text-emerald-400', 'from-emerald-400/20 to-emerald-900/40', 'border-emerald-400/30', ARRAY['Zona Preferencial', 'Welcome Drink']),
   ('standard', 'STANDARD ECHO', 'Acceso General', 25, 'text-gray-400', 'from-gray-600/20 to-gray-900/40', 'border-white/10', ARRAY['Acceso General']);

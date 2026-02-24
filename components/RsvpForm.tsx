@@ -13,15 +13,17 @@ interface RsvpFormProps {
   existingRsvpsCount: number;
   isVotingClosed: boolean;
   initialData?: RsvpData;
+  guestPhone?: string;
 }
 
 export const INITIAL_TIERS: TicketTier[] = [
+  { id: 'host', name: 'THE HOST 👑', description: 'El Anfitrión — Exclusivo', stock: 1, color: 'text-yellow-300', gradient: 'from-yellow-400/30 to-amber-900/50', border: 'border-yellow-400/50', perks: ['👑 Es Mi Fiesta', '🍾 Barra Libre Total', '⚡ Acceso Total', '🎶 DJ Dedicado'] },
   { id: 'platinum', name: 'PLATINUM VIP', description: 'Acceso total + Barra Libre', stock: 4, color: 'text-amber-400', gradient: 'from-amber-400/20 to-amber-900/40', border: 'border-amber-400/30', perks: ['🍸 1 Trago Personal Gratis', 'Barra Libre', 'Zona VIP', 'Meet & Greet'] },
   { id: 'emerald', name: 'EMERALD GUEST', description: 'Acceso Preferencial', stock: 12, color: 'text-emerald-400', gradient: 'from-emerald-400/20 to-emerald-900/40', border: 'border-emerald-400/30', perks: ['Zona Preferencial', 'Welcome Drink'] },
   { id: 'standard', name: 'STANDARD ECHO', description: 'Acceso General', stock: 25, color: 'text-gray-400', gradient: 'from-gray-600/20 to-gray-900/40', border: 'border-white/10', perks: ['Acceso General'] }
 ];
 
-export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptions, config, existingRsvpsCount, isVotingClosed, initialData }) => {
+export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptions, config, existingRsvpsCount, isVotingClosed, initialData, guestPhone }) => {
   const winningVenue = config.winningVenueId ? venueOptions.find(v => v.id === config.winningVenueId) : null;
 
   const [step, setStep] = useState(1);
@@ -55,7 +57,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
           return; // Keep INITIAL_TIERS as fallback
         }
         if (data && data.length > 0) {
-          const tierOrder = ['platinum', 'emerald', 'standard'];
+          const tierOrder = ['host', 'platinum', 'emerald', 'standard'];
           const sortedData = data.sort((a, b) => tierOrder.indexOf(a.id) - tierOrder.indexOf(b.id));
 
           setTiers(sortedData.map((t: any) => ({
@@ -92,7 +94,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
               perks: updated.perks || t.perks
             } : t);
             // Re-sort just in case
-            const tierOrder = ['platinum', 'emerald', 'standard'];
+            const tierOrder = ['host', 'platinum', 'emerald', 'standard'];
             return newTiers.sort((a, b) => tierOrder.indexOf(a.id) - tierOrder.indexOf(b.id));
           });
         }
@@ -410,7 +412,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({ onSubmit, onBack, venueOptio
               </div>
             )}
             <div className="space-y-4 max-w-xl mx-auto">
-              {tiers.map(tier => {
+              {tiers.filter(t => t.id !== 'host' || guestPhone === config.adminUser).map(tier => {
                 const isAgotado = tier.stock <= 0;
                 const isSelected = formData.selectedTier?.id === tier.id;
                 return (
